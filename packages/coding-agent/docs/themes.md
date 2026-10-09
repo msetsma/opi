@@ -76,9 +76,10 @@ Use the theme name as the filename. Pi hot-reloads the active user theme only fr
 | `appearance` | No | `"dark"` or `"light"`: the background the theme is designed for. Pi detects it from the theme colors when omitted. |
 | `vars` | No | Defines reusable color values. Variables can reference other variables. |
 | `colors` | Yes | Assigns colors to terminal UI roles. The schema identifies required and optional roles. |
+| `syntax` | No | Overrides syntax highlighting styles per highlight.js scope. See [Override syntax highlighting](#override-syntax-highlighting). |
 | `export` | No | Overrides page and panel backgrounds in HTML exports. |
 
-Theme objects are strict: only documented top-level fields and color tokens are accepted. Define reusable custom colors under `vars`; custom keys under `colors` or `export` and additional top-level metadata are rejected.
+Theme objects are strict: only documented top-level fields and color tokens are accepted. Define reusable custom colors under `vars`; custom keys under `colors` or `export` and additional top-level metadata are rejected. Keys under `syntax` are free-form scope names.
 
 A color can be written in six forms:
 
@@ -128,6 +129,44 @@ Five colors are optional and inherit another color when omitted:
 | `thinkingMax` | `thinkingXhigh` |
 
 If `export` colors are omitted, Pi derives HTML page and panel backgrounds from `userMessageBg`.
+
+## Add text attributes
+
+A foreground color can be an object with an `fg` color and text attributes: `bold`, `dim`, `italic`, `underline`, and `strikethrough`.
+
+```json
+{
+  "colors": {
+    "mdHeading": { "fg": "yellow", "bold": true },
+    "accent": "#7aa2f7"
+  }
+}
+```
+
+Background colors (`*Bg`) accept plain colors only, because they fill whole padded lines. An omitted optional color inherits its fallback's attributes along with its color. A color you set explicitly does not inherit attributes.
+
+Extensions that style text with `theme.style()` can turn a token's attribute off, for example `bold: false`.
+
+Two limits apply:
+
+- A theme can add bold to markdown headings but not remove it, because the markdown renderer always makes headings bold.
+- Bold and dim share one reset code (SGR 22). Where a bold token is nested inside dim text, or the reverse, the inner text's end also ends the outer attribute.
+
+## Override syntax highlighting
+
+`syntax` maps [highlight.js scopes](https://highlightjs.readthedocs.io/en/latest/css-classes-reference.html) to styles. A value is a color, a color object as above, or the name of a foreground color such as `muted`. A variable with the same name takes precedence over a color name.
+
+```json
+{
+  "syntax": {
+    "regexp": { "fg": "#e0af68" },
+    "meta": "muted",
+    "selector-tag": { "fg": "syntaxKeyword", "italic": true }
+  }
+}
+```
+
+An override replaces the scope's default `syntax*` color and can style scopes that have no default, such as `selector-tag`, `template-variable`, or `symbol`. A scope without its own style uses the part before its first `.` or `-`, so `meta` also styles `meta-keyword` and `meta-string`.
 
 ## Load a theme from a project or package
 

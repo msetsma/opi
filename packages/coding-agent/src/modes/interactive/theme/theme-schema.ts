@@ -32,16 +32,38 @@ export const ColorValueSchema = colorValue();
 
 export type ThemeColorValue = Static<typeof ColorValueSchema>;
 
+const attribute = (description: string) => Type.Optional(Type.Boolean({ description }));
+
+const TextStyleSchema = Type.Object(
+	{
+		fg: ColorValueSchema,
+		bold: attribute("Bold (SGR 1)"),
+		dim: attribute("Faint (SGR 2)"),
+		italic: attribute("Italic (SGR 3)"),
+		underline: attribute("Underline (SGR 4)"),
+		strikethrough: attribute("Strikethrough (SGR 9)"),
+	},
+	{ additionalProperties: false },
+);
+
+/** A color, or a color with text attributes. Background tokens accept colors only. */
+export const ForegroundValueSchema = Type.Union([ColorValueSchema, TextStyleSchema]);
+
+export type ThemeForegroundValue = Static<typeof ForegroundValueSchema>;
+
 function themeTokenProperties(tokens: ThemeTokenDescriptors): TProperties {
 	const properties: TProperties = {};
 	for (const [name, descriptor] of Object.entries(tokens)) {
-		const schema = colorValue(descriptor.description);
+		const schema =
+			descriptor.slot === "foreground"
+				? Type.Union([ColorValueSchema, TextStyleSchema], { description: descriptor.description })
+				: colorValue(descriptor.description);
 		properties[name] = descriptor.fallback === undefined ? schema : Type.Optional(schema);
 	}
 	return properties;
 }
 
-const ThemeColorsSchema = Type.Unsafe<ThemeColorValues<ThemeColorValue>>(
+const ThemeColorsSchema = Type.Unsafe<ThemeColorValues<ThemeForegroundValue>>(
 	Type.Object(themeTokenProperties(THEME_TOKENS), {
 		description:
 			"Theme color definitions (scrollbar, thinkingMax, and search highlight colors are optional and use compatible fallbacks)",
@@ -68,6 +90,12 @@ export const ThemeJsonSchema = Type.Object(
 			}),
 		),
 		colors: ThemeColorsSchema,
+		syntax: Type.Optional(
+			Type.Record(Type.String(), ForegroundValueSchema, {
+				description:
+					"Syntax highlighting overrides keyed by highlight.js scope (e.g. regexp, meta, selector-tag). Values are colors, color objects, or foreground token names.",
+			}),
+		),
 		export: Type.Optional(
 			Type.Object(
 				{

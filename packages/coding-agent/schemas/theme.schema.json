@@ -96,55 +96,55 @@
       ],
       "properties": {
         "accent": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Primary accent color (logo, selected items, cursor)"
         },
         "border": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Normal borders"
         },
         "borderAccent": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Highlighted borders"
         },
         "borderMuted": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Subtle borders"
         },
         "success": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Success states"
         },
         "error": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Error states"
         },
         "warning": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Warning states"
         },
         "muted": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Secondary/dimmed text"
         },
         "dim": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Very dimmed text (more subtle than muted)"
         },
         "text": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Default text color (usually empty string)"
         },
         "thinkingText": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Thinking block text color"
         },
         "scrollbarTrack": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Fullscreen scrollbar track foreground (falls back to muted when omitted)"
         },
         "scrollbarThumb": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Fullscreen scrollbar thumb foreground (falls back to text when omitted)"
         },
         "selectedBg": {
@@ -156,7 +156,7 @@
           "description": "Transcript search match background and current-match text (falls back to selectedBg when omitted)"
         },
         "searchMatchText": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Transcript search match text and current-match background (falls back to text when omitted)"
         },
         "userMessageBg": {
@@ -164,7 +164,7 @@
           "description": "User message background"
         },
         "userMessageText": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "User message text color"
         },
         "customMessageBg": {
@@ -172,11 +172,11 @@
           "description": "Custom message background (hook-injected messages)"
         },
         "customMessageText": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Custom message text color"
         },
         "customMessageLabel": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Custom message type label color"
         },
         "toolPendingBg": {
@@ -192,136 +192,145 @@
           "description": "Tool execution box (error state)"
         },
         "toolTitle": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Tool execution box title color"
         },
         "toolOutput": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Tool execution box output text color"
         },
         "mdHeading": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown heading text"
         },
         "mdLink": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown link text"
         },
         "mdLinkUrl": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown link URL"
         },
         "mdCode": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown inline code"
         },
         "mdCodeBlock": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown code block content"
         },
         "mdCodeBlockBorder": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown code block fences"
         },
         "mdQuote": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown blockquote text"
         },
         "mdQuoteBorder": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown blockquote border"
         },
         "mdHr": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown horizontal rule"
         },
         "mdListBullet": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Markdown list bullets/numbers"
         },
         "toolDiffAdded": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Added lines in tool diffs"
         },
         "toolDiffRemoved": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Removed lines in tool diffs"
         },
         "toolDiffContext": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Context lines in tool diffs"
         },
         "syntaxComment": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Syntax highlighting: comments"
         },
         "syntaxKeyword": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Syntax highlighting: keywords"
         },
         "syntaxFunction": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Syntax highlighting: function names"
         },
         "syntaxVariable": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Syntax highlighting: variable names"
         },
         "syntaxString": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Syntax highlighting: string literals"
         },
         "syntaxNumber": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Syntax highlighting: number literals"
         },
         "syntaxType": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Syntax highlighting: type names"
         },
         "syntaxOperator": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Syntax highlighting: operators"
         },
         "syntaxPunctuation": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Syntax highlighting: punctuation"
         },
         "thinkingOff": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Thinking level border: off"
         },
         "thinkingMinimal": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Thinking level border: minimal"
         },
         "thinkingLow": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Thinking level border: low"
         },
         "thinkingMedium": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Thinking level border: medium"
         },
         "thinkingHigh": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Thinking level border: high"
         },
         "thinkingXhigh": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Thinking level border: xhigh"
         },
         "thinkingMax": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Thinking level border: max (falls back to thinkingXhigh when omitted)"
         },
         "bashMode": {
-          "$ref": "#/$defs/ColorValue",
+          "$ref": "#/$defs/ForegroundValue",
           "description": "Editor border color in bash mode"
         }
       },
       "description": "Theme color definitions (scrollbar, thinkingMax, and search highlight colors are optional and use compatible fallbacks)",
       "additionalProperties": false
+    },
+    "syntax": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "$ref": "#/$defs/ForegroundValue"
+        }
+      },
+      "description": "Syntax highlighting overrides keyed by highlight.js scope (e.g. regexp, meta, selector-tag). Values are colors, color objects, or foreground token names."
     },
     "export": {
       "type": "object",
@@ -358,6 +367,45 @@
           "minimum": 0,
           "maximum": 255,
           "description": "256-color palette index (0-255)"
+        }
+      ]
+    },
+    "ForegroundValue": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ColorValue"
+        },
+        {
+          "type": "object",
+          "required": [
+            "fg"
+          ],
+          "properties": {
+            "fg": {
+              "$ref": "#/$defs/ColorValue"
+            },
+            "bold": {
+              "type": "boolean",
+              "description": "Bold (SGR 1)"
+            },
+            "dim": {
+              "type": "boolean",
+              "description": "Faint (SGR 2)"
+            },
+            "italic": {
+              "type": "boolean",
+              "description": "Italic (SGR 3)"
+            },
+            "underline": {
+              "type": "boolean",
+              "description": "Underline (SGR 4)"
+            },
+            "strikethrough": {
+              "type": "boolean",
+              "description": "Strikethrough (SGR 9)"
+            }
+          },
+          "additionalProperties": false
         }
       ]
     }

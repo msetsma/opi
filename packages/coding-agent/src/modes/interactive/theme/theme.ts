@@ -189,13 +189,17 @@ export class Theme {
 	private mode: TerminalColorMode;
 	// Precomputed escape sequences keep fg()/bg() on the render hot path to a lookup and concat.
 	private readonly fgAnsi = new Map<ThemeColor, string>();
+	// Open and close sequences for fg(): the color plus the token's attributes.
+	private readonly fgStyled = new Map<ThemeColor, readonly [string, string]>();
 	private readonly bgAnsi = new Map<ThemeBg, string>();
 	// Tokens set to "" have no color of their own; `colors` fills them from the terminal defaults.
 	private readonly concreteColors: Partial<Record<ThemeToken, Color>> = {};
 	private readonly defaultForegroundTokens: ThemeToken[] = [];
 	private readonly defaultBackgroundTokens: ThemeToken[] = [];
-	// Foreground tokens rendered faint (SGR 2) on top of their color.
-	private readonly dimTokens: ReadonlySet<ThemeColor>;
+	// Text attributes (bold, faint, ...) rendered on top of a foreground token's color.
+	private readonly tokenAttrs = new Map<ThemeColor, TextAttributes>();
+	/** Highlight.js scope styles that replace or extend the default syntax token mapping. */
+	readonly syntaxOverride: Readonly<Record<string, ThemeStyle>>;
 	private readonly ownAppearance: ThemeAppearance | undefined;
 	private resolvedColors: { terminal: TerminalColors; colors: Readonly<Record<ThemeToken, Color>> } | undefined;
 
@@ -210,13 +214,25 @@ export class Theme {
 			appearance?: ThemeAppearance;
 			/** Foreground tokens to render faint (SGR 2). */
 			dim?: readonly ThemeColor[];
+			/** Text attributes per foreground token. Omitted optional tokens inherit their fallback's. */
+			attributes?: Partial<Record<ThemeColor, TextAttributes>>;
+			/** Styles per highlight.js scope, see `syntaxOverride`. */
+			syntax?: Readonly<Record<string, ThemeStyle>>;
 		} = {},
 	) {
 		this.name = options.name;
 		this.sourcePath = options.sourcePath;
 		this.sourceInfo = options.sourceInfo;
 		this.mode = mode;
-		this.dimTokens = new Set(options.dim);
+		this.syntaxOverride = { ...options.syntax };
+		const attributes = { ...options.attributes };
+		for (const token of options.dim ?? []) attributes[token] = { ...attributes[token], dim: true };
+		for (const [token, descriptor] of Object.entries(THEME_TOKENS)) {
+			if (!("fallback" in descriptor) || descriptor.slot !== "foreground") continue;
+			if (fgColors[token as ThemeColor] === undefined) {
+				attributes[token as ThemeColor] = attributes[descriptor.fallback as ThemeColor];
+			}
+		}
 		const { fgColors: foregrounds, bgColors: backgrounds } = splitThemeColors(
 			withThemeTokenFallbacks({ ...fgColors, ...bgColors }),
 		);
@@ -234,7 +250,14 @@ export class Theme {
 			return isBackground ? backgroundAnsi(color, mode) : foregroundAnsi(color, mode);
 		};
 		for (const [token, value] of Object.entries(foregrounds) as [ThemeColor, string | number][]) {
-			this.fgAnsi.set(token, addToken(token, value, false));
+			const ansi = addToken(token, value, false);
+			const attrs = attributes[token];
+			if (attrs) this.tokenAttrs.set(token, attrs);
+			const [open, close] = styleTextWithAnsi("\0", ansi, undefined, attrs ?? {}).split("\0");
+			this.fgAnsi.set(token, ansi);
+			// Faint tokens keep the combined close sequence they always had. Bold ones need the separate
+			// `\x1b[22m`, which chalk.bold looks for to re-open the bold of enclosing text.
+			this.fgStyled.set(token, [open, attrs?.dim ? close.replace("\x1b[22m\x1b[39m", "\x1b[22;39m") : close]);
 		}
 		for (const [token, value] of Object.entries(backgrounds) as [ThemeBg, string | number][]) {
 			this.bgAnsi.set(token, addToken(token, value, true));
@@ -266,18 +289,20 @@ export class Theme {
 			const colors = { ...this.concreteColors };
 			for (const token of this.defaultForegroundTokens) colors[token] = foreground;
 			for (const token of this.defaultBackgroundTokens) colors[token] = background;
-			for (const token of this.dimTokens) {
+			for (const [token, attrs] of this.tokenAttrs) {
 				const color = colors[token];
-				if (color) colors[token] = mixColors(color, background, 0.4);
+				if (attrs.dim && color) colors[token] = mixColors(color, background, 0.4);
 			}
 			this.resolvedColors = { terminal, colors: Object.freeze(colors as Record<ThemeToken, Color>) };
 		}
 		return this.resolvedColors.colors;
 	}
 
+	/** Token attributes apply under the call site's, so `bold: false` removes a token's bold. */
 	style(text: string, options: ThemeStyle): string {
 		const { fg, bg } = options;
-		if (typeof fg === "string" && this.dimTokens.has(fg)) options = { ...options, dim: true };
+		const attrs = typeof fg === "string" ? this.tokenAttrs.get(fg) : undefined;
+		if (attrs) options = { ...attrs, ...options };
 		return styleTextWithAnsi(
 			text,
 			fg === undefined
@@ -295,9 +320,8 @@ export class Theme {
 	}
 
 	fg(color: ThemeColor, text: string): string {
-		const ansi = this.tokenAnsi(this.fgAnsi, color);
-		if (this.dimTokens.has(color)) return `${ansi}\x1b[2m${text}\x1b[22;39m`;
-		return `${ansi}${text}\x1b[39m`;
+		const styled = this.tokenAnsi(this.fgStyled, color);
+		return `${styled[0]}${text}${styled[1]}`;
 	}
 
 	bg(color: ThemeBg, text: string): string {
@@ -305,7 +329,7 @@ export class Theme {
 		return `${ansi}${text}\x1b[49m`;
 	}
 
-	private tokenAnsi<T extends ThemeToken>(ansi: Map<T, string>, token: T): string {
+	private tokenAnsi<T extends ThemeToken, V>(ansi: Map<T, V>, token: T): V {
 		const value = ansi.get(token);
 		if (value === undefined) throw new Error(`Unknown theme color: ${token}`);
 		return value;
@@ -331,10 +355,14 @@ export class Theme {
 		return chalk.strikethrough(text);
 	}
 
-	/** Opening escape sequence for a foreground token. Faint tokens include SGR 2, which `\x1b[22m` closes. */
+	/**
+	 * Opening escape sequence for a foreground token. Faint and bold tokens include SGR 2 or 1, which `\x1b[22m`
+	 * closes. Other attributes (italic, underline, strikethrough) apply only through fg() and style().
+	 */
 	getFgAnsi(color: ThemeColor): string {
 		const ansi = this.tokenAnsi(this.fgAnsi, color);
-		return this.dimTokens.has(color) ? `${ansi}\x1b[2m` : ansi;
+		const attrs = this.tokenAttrs.get(color);
+		return attrs ? `${ansi}${attrs.bold ? "\x1b[1m" : ""}${attrs.dim ? "\x1b[2m" : ""}` : ansi;
 	}
 
 	getBgAnsi(color: ThemeBg): string {
@@ -506,7 +534,7 @@ function loadThemeJson(name: string): ThemeJson {
 	return parseThemeJsonContent(name, content);
 }
 
-function splitThemeColors(colors: ResolvedThemeColorValues<string | number>): {
+function splitThemeColors(colors: ThemeColorValues<string | number>): {
 	fgColors: Record<ThemeColor, string | number>;
 	bgColors: Record<ThemeBg, string | number>;
 } {
@@ -524,12 +552,38 @@ function splitThemeColors(colors: ResolvedThemeColorValues<string | number>): {
 
 function createTheme(themeJson: ThemeJson, mode?: TerminalColorMode, sourcePath?: string): Theme {
 	const colorMode = mode ?? getTerminalColorMode();
-	const resolvedColors = withThemeTokenFallbacks(resolveThemeColors(themeJson.colors, themeJson.vars));
-	const { fgColors, bgColors } = splitThemeColors(resolvedColors);
+	const vars = themeJson.vars ?? {};
+	// Object values carry a color and text attributes. Fallbacks resolve in the constructor, which needs
+	// to know which optional tokens were omitted so they inherit their fallback's attributes too.
+	const colors = {} as ThemeColorValues<ColorValue>;
+	const attributes: Partial<Record<ThemeColor, TextAttributes>> = {};
+	for (const [token, value] of Object.entries(themeJson.colors)) {
+		if (typeof value === "object") {
+			const { fg, ...attrs } = value;
+			colors[token as ThemeToken] = fg;
+			attributes[token as ThemeColor] = attrs;
+		} else {
+			colors[token as ThemeToken] = value;
+		}
+	}
+	// Syntax values may also name a foreground token, unless a variable of the same name exists.
+	const syntax: Record<string, ThemeStyle> = {};
+	for (const [scope, value] of Object.entries(themeJson.syntax ?? {})) {
+		const { fg, ...attrs } = typeof value === "object" ? value : { fg: value };
+		if (typeof fg === "string" && !(fg in vars) && THEME_TOKENS[fg as ThemeToken]?.slot === "foreground") {
+			syntax[scope] = { ...attrs, fg: fg as ThemeColor };
+			continue;
+		}
+		const resolved = resolveVarRefs(fg, vars);
+		syntax[scope] = { ...attrs, fg: resolved === "" ? undefined : parseColor(resolved) };
+	}
+	const { fgColors, bgColors } = splitThemeColors(resolveThemeColors(colors, vars));
 	return new Theme(fgColors, bgColors, colorMode, {
 		name: themeJson.name,
 		sourcePath,
 		appearance: themeJson.appearance,
+		attributes,
+		syntax,
 	});
 }
 
@@ -881,11 +935,12 @@ export function getThemeExportColors(themeName?: string): {
 
 type CliHighlightTheme = Record<string, (s: string) => string>;
 
-let cachedHighlightThemeFor: Theme | undefined;
+// Keyed on `syntaxOverride`, which each Theme owns: the global `theme` proxy keeps one identity across themes.
+let cachedHighlightThemeFor: Theme["syntaxOverride"] | undefined;
 let cachedCliHighlightTheme: CliHighlightTheme | undefined;
 
 function buildCliHighlightTheme(t: Theme): CliHighlightTheme {
-	return {
+	const highlightTheme: CliHighlightTheme = {
 		keyword: (s: string) => t.fg("syntaxKeyword", s),
 		built_in: (s: string) => t.fg("syntaxType", s),
 		literal: (s: string) => t.fg("syntaxNumber", s),
@@ -913,11 +968,18 @@ function buildCliHighlightTheme(t: Theme): CliHighlightTheme {
 		addition: (s: string) => t.fg("toolDiffAdded", s),
 		deletion: (s: string) => t.fg("toolDiffRemoved", s),
 	};
+	// Overrides replace the default mapping or theme scopes it leaves unstyled, e.g. selector-tag. Unmapped
+	// sub-scopes such as meta-keyword fall back to their prefix in renderHighlightedHtml().
+	for (const [scope, style] of Object.entries(t.syntaxOverride)) {
+		const [open, close] = t.style("\0", style).split("\0");
+		highlightTheme[scope] = (s: string) => `${open}${s}${close}`;
+	}
+	return highlightTheme;
 }
 
 function getCliHighlightTheme(t: Theme): CliHighlightTheme {
-	if (cachedHighlightThemeFor !== t || !cachedCliHighlightTheme) {
-		cachedHighlightThemeFor = t;
+	if (cachedHighlightThemeFor !== t.syntaxOverride || !cachedCliHighlightTheme) {
+		cachedHighlightThemeFor = t.syntaxOverride;
 		cachedCliHighlightTheme = buildCliHighlightTheme(t);
 	}
 	return cachedCliHighlightTheme;

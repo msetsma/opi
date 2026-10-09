@@ -323,4 +323,34 @@ describe("generated configuration schemas", () => {
 			expect(() => validateThemeJson("invalid", invalid)).toThrow(/additional properties/i);
 		}
 	});
+
+	it("accepts attribute objects on foreground tokens and syntax overrides", () => {
+		const builtIn = JSON.parse(
+			readFileSync(new URL("../src/modes/interactive/theme/dark.json", import.meta.url), "utf-8"),
+		) as { colors: Record<string, unknown> };
+		const withColors = (colors: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({
+			...builtIn,
+			name: "custom",
+			colors: { ...builtIn.colors, ...colors },
+			...extra,
+		});
+		expect(
+			validateThemeJson(
+				"custom",
+				withColors(
+					{ mdHeading: { fg: "yellow", bold: true }, accent: { fg: 33, italic: true, underline: true } },
+					{ vars: { yellow: "#e0af68" }, syntax: { regexp: { fg: "#e0af68" }, meta: "muted", "selector-tag": 4 } },
+				),
+			).name,
+		).toBe("custom");
+		for (const invalid of [
+			withColors({ selectedBg: { fg: "#ffffff" } }),
+			withColors({ mdHeading: { fg: "#ffffff", inverse: true } }),
+			withColors({ mdHeading: { bold: true } }),
+			withColors({}, { syntax: { regexp: { fg: "#ffffff", bg: "#000000" } } }),
+			withColors({}, { syntax: { regexp: true } }),
+		]) {
+			expect(() => validateThemeJson("invalid", invalid)).toThrow('Invalid theme "invalid"');
+		}
+	});
 });
