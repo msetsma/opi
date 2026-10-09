@@ -5,6 +5,7 @@ import {
 	AltScreenSearchIndex,
 	findAltScreenSearchMatches,
 } from "../src/alt-screen-search.ts";
+import { Frame } from "../src/components/frame.ts";
 import { HStack } from "../src/components/h-stack.ts";
 import { Image } from "../src/components/image.ts";
 import { MouseRegion } from "../src/components/mouse-region.ts";
@@ -2056,6 +2057,32 @@ describe("TuiAltScreen", () => {
 		assert.ok(tui.viewportTop < topBefore);
 		assert.deepStrictEqual(nonCapturing.inputs, []);
 		assert.deepStrictEqual(unfocused.inputs, []);
+		tui.stop();
+	});
+
+	it("keeps wheel input over a framed overlay out of the transcript", async () => {
+		const terminal = new VirtualTerminal(20, 6);
+		const tui = new TuiAltScreen(terminal);
+		tui.addChild(new Text(Array.from({ length: 12 }, (_, index) => `line ${index + 1}`).join("\n"), 0, 0));
+		const editor = new InputOverlay();
+		tui.setFocus(editor);
+		tui.showOverlay(new Frame(new Text("framed", 0, 0), { height: 3 }, () => tui.requestRender()), {
+			anchor: "top-left",
+			width: 10,
+			nonCapturing: true,
+		});
+		tui.start();
+		await terminal.waitForRender();
+		const topBefore = tui.viewportTop;
+
+		terminal.sendInput("\x1b[<64;3;2M");
+		await terminal.waitForRender();
+		assert.strictEqual(tui.viewportTop, topBefore);
+		assert.deepStrictEqual(editor.inputs, []);
+
+		terminal.sendInput("\x1b[<64;15;2M");
+		await terminal.waitForRender();
+		assert.ok(tui.viewportTop < topBefore);
 		tui.stop();
 	});
 

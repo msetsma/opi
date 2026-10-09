@@ -242,6 +242,29 @@ tui.hasOverlay();
 3. `margin` clamps final position to stay within terminal bounds
 4. `visible` callback controls whether overlay renders (called each frame)
 
+#### Frame
+
+`Frame` is a fixed-height box for floating windows. It lays out its child like a screen, so `ScrollView`, `VStack`, and `HStack` work inside it in both renderers, and draws a rounded border with an optional title. It always renders exactly `height` lines, so anchors and margins behave as with any other overlay. Size the frame with `height`, not `maxHeight`: a `maxHeight` below the frame height crops the bottom rows and the bottom border.
+
+```typescript
+import { Frame, ScrollView, Text } from "@earendil-works/pi-tui";
+
+const frame = new Frame(
+  new ScrollView(new Text(longText), { scrollbar: "always" }),
+  {
+    // Rows including the border. Clamp to the terminal: a taller overlay shifts the screen.
+    height: () => Math.min(20, Math.floor(tui.terminal.rows * 0.6)),
+    title: "Log",
+    style: (text) => `\x1b[90m${text}\x1b[39m`, // border and title
+    border: true, // default; dropped when narrower or shorter than 3 cells
+  },
+  () => tui.requestRender(),
+);
+tui.showOverlay(frame, { anchor: "center", width: "60%" });
+```
+
+Mouse events inside the border go to the component under the pointer. Wheel input scrolls the scroll views under the pointer and is always consumed, so the content beneath the frame does not scroll. The frame stays the keyboard focus target when a nested control is clicked and forwards keys and `focused` to its child.
+
 ### Component Interface
 
 All components implement:
