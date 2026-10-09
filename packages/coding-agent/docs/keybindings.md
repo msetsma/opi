@@ -27,6 +27,19 @@ A configured value replaces the default for that action. Use an empty list to di
 
 After editing the file, run `/reload` to apply the changes to the active session.
 
+## Extension shortcuts
+
+Extension shortcuts registered with an `id` can be rebound the same way. `/hotkeys` shows each id next to its description:
+
+```json
+{
+  "my-ext.togglePanel": ["ctrl+shift+o", "alt+o"],
+  "other-ext.preview": []
+}
+```
+
+A value replaces the extension's default key, and `[]` disables the shortcut. Keys you assign may override reserved built-in actions; Pi warns about the conflict and runs the extension shortcut. Built-in ids such as `app.clear` cannot be claimed by an extension shortcut.
+
 ## Key syntax
 
 Write a key as `modifier+key`. Modifiers are `ctrl`, `shift`, `alt`, and `super`. You can combine modifiers. Valid keys are:

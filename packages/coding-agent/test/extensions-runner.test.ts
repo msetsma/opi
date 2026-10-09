@@ -374,6 +374,88 @@ describe("ExtensionRunner", () => {
 		});
 	});
 
+	describe("shortcut ids", () => {
+		const loadIdShortcut = async () => {
+			fs.writeFileSync(
+				path.join(extensionsDir, "with-id.ts"),
+				`export default function(pi) {
+					pi.registerShortcut("ctrl+shift+k", { id: "test.toggle", description: "Toggle", handler: async () => {} });
+				}`,
+			);
+			const result = await discoverAndLoadExtensions([], tempDir, tempDir);
+			return new ExtensionRunner(result.extensions, result.runtime, tempDir, sessionManager, modelRegistry);
+		};
+
+		it("keeps the default key without a user binding", async () => {
+			const runner = await loadIdShortcut();
+			const shortcuts = runner.getShortcuts(defaultKeybindings, {});
+			expect([...shortcuts.keys()]).toEqual(["ctrl+shift+k"]);
+			expect(shortcuts.get("ctrl+shift+k")?.id).toBe("test.toggle");
+		});
+
+		it("replaces the key with the user binding for the id", async () => {
+			const runner = await loadIdShortcut();
+			const shortcuts = runner.getShortcuts(defaultKeybindings, { "test.toggle": "alt+k" });
+			expect([...shortcuts.keys()]).toEqual(["alt+k"]);
+		});
+
+		it("accepts a list of keys", async () => {
+			const runner = await loadIdShortcut();
+			const shortcuts = runner.getShortcuts(defaultKeybindings, { "test.toggle": ["alt+k", "alt+j"] });
+			expect([...shortcuts.keys()]).toEqual(["alt+k", "alt+j"]);
+		});
+
+		it("disables the shortcut with an empty list", async () => {
+			const runner = await loadIdShortcut();
+			const shortcuts = runner.getShortcuts(defaultKeybindings, { "test.toggle": [] });
+			expect(shortcuts.size).toBe(0);
+		});
+
+		it("lets user-chosen keys bypass reserved built-ins and reports the conflict", async () => {
+			const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const runner = await loadIdShortcut();
+			const shortcuts = runner.getShortcuts(defaultKeybindings, { "test.toggle": "ctrl+c" });
+			expect(shortcuts.has("ctrl+c")).toBe(true);
+			expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("'ctrl+c' is built-in shortcut for"));
+			warnSpy.mockRestore();
+		});
+
+		it("ignores user bindings for built-in ids", async () => {
+			fs.writeFileSync(
+				path.join(extensionsDir, "builtin-id.ts"),
+				`export default function(pi) {
+					pi.registerShortcut("ctrl+shift+k", { id: "app.clear", handler: async () => {} });
+				}`,
+			);
+			const result = await discoverAndLoadExtensions([], tempDir, tempDir);
+			const runner = new ExtensionRunner(result.extensions, result.runtime, tempDir, sessionManager, modelRegistry);
+			const shortcuts = runner.getShortcuts(defaultKeybindings, { "app.clear": "ctrl+x" });
+			expect([...shortcuts.keys()]).toEqual(["ctrl+shift+k"]);
+		});
+
+		it("keeps two shortcuts on the same default key when ids differ", async () => {
+			fs.writeFileSync(
+				path.join(extensionsDir, "two-ids.ts"),
+				`export default function(pi) {
+					pi.registerShortcut("ctrl+shift+k", { id: "test.a", handler: async () => {} });
+					pi.registerShortcut("ctrl+shift+k", { id: "test.b", handler: async () => {} });
+				}`,
+			);
+			const result = await discoverAndLoadExtensions([], tempDir, tempDir);
+			const runner = new ExtensionRunner(result.extensions, result.runtime, tempDir, sessionManager, modelRegistry);
+			const shortcuts = runner.getShortcuts(defaultKeybindings, { "test.b": "alt+k" });
+			expect(shortcuts.get("ctrl+shift+k")?.id).toBe("test.a");
+			expect(shortcuts.get("alt+k")?.id).toBe("test.b");
+		});
+
+		it("keeps unknown ids from keybindings.json in user bindings", () => {
+			const agentDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-keybindings-"));
+			fs.writeFileSync(path.join(agentDir, "keybindings.json"), JSON.stringify({ "test.toggle": ["alt+k"] }));
+			expect(KeybindingsManager.create(agentDir).getUserBindings()["test.toggle"]).toEqual(["alt+k"]);
+			fs.rmSync(agentDir, { recursive: true, force: true });
+		});
+	});
+
 	describe("tool collection", () => {
 		it("collects tools from multiple extensions", async () => {
 			const toolCode = (name: string) => `

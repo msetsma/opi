@@ -670,7 +670,17 @@ export class ExtensionRunner {
 		return new Map(this.runtime.flagValues);
 	}
 
-	getShortcuts(resolvedKeybindings: KeybindingsConfig): Map<KeyId, ExtensionShortcut> {
+	/**
+	 * Resolve extension shortcuts to keys.
+	 *
+	 * A user binding for a shortcut's `id` in keybindings.json replaces its default key; `[]` disables it.
+	 * User-chosen keys bypass the reserved built-in list (users own their keys), while an extension's
+	 * default key is still blocked when it collides with a reserved built-in.
+	 */
+	getShortcuts(
+		resolvedKeybindings: KeybindingsConfig,
+		userBindings: KeybindingsConfig = {},
+	): Map<KeyId, ExtensionShortcut> {
 		this.shortcutDiagnostics = [];
 		const builtinKeybindings = buildBuiltinKeybindings(resolvedKeybindings);
 		const extensionShortcuts = new Map<KeyId, ExtensionShortcut>();
@@ -683,33 +693,42 @@ export class ExtensionRunner {
 		};
 
 		for (const ext of this.extensions) {
-			for (const [key, shortcut] of ext.shortcuts) {
-				const normalizedKey = key.toLowerCase() as KeyId;
+			for (const shortcut of ext.shortcuts.values()) {
+				// Built-in ids are not overridable through an extension shortcut id.
+				const userKeys =
+					shortcut.id === undefined || Object.hasOwn(resolvedKeybindings, shortcut.id)
+						? undefined
+						: userBindings[shortcut.id];
+				const userChosen = userKeys !== undefined;
+				const keys = userKeys === undefined ? [shortcut.shortcut] : Array.isArray(userKeys) ? userKeys : [userKeys];
+				for (const key of keys) {
+					const normalizedKey = key.toLowerCase() as KeyId;
 
-				const builtInKeybinding = builtinKeybindings[normalizedKey];
-				if (builtInKeybinding?.restrictOverride === true) {
-					addDiagnostic(
-						`Extension shortcut '${key}' from ${shortcut.extensionPath} conflicts with built-in shortcut. Skipping.`,
-						shortcut.extensionPath,
-					);
-					continue;
-				}
+					const builtInKeybinding = builtinKeybindings[normalizedKey];
+					if (builtInKeybinding?.restrictOverride === true && !userChosen) {
+						addDiagnostic(
+							`Extension shortcut '${key}' from ${shortcut.extensionPath} conflicts with built-in shortcut. Skipping.`,
+							shortcut.extensionPath,
+						);
+						continue;
+					}
 
-				if (builtInKeybinding?.restrictOverride === false) {
-					addDiagnostic(
-						`Extension shortcut conflict: '${key}' is built-in shortcut for ${builtInKeybinding.keybinding} and ${shortcut.extensionPath}. Using ${shortcut.extensionPath}.`,
-						shortcut.extensionPath,
-					);
-				}
+					if (builtInKeybinding) {
+						addDiagnostic(
+							`Extension shortcut conflict: '${key}' is built-in shortcut for ${builtInKeybinding.keybinding} and ${shortcut.extensionPath}. Using ${shortcut.extensionPath}.`,
+							shortcut.extensionPath,
+						);
+					}
 
-				const existingExtensionShortcut = extensionShortcuts.get(normalizedKey);
-				if (existingExtensionShortcut) {
-					addDiagnostic(
-						`Extension shortcut conflict: '${key}' registered by both ${existingExtensionShortcut.extensionPath} and ${shortcut.extensionPath}. Using ${shortcut.extensionPath}.`,
-						shortcut.extensionPath,
-					);
+					const existingExtensionShortcut = extensionShortcuts.get(normalizedKey);
+					if (existingExtensionShortcut) {
+						addDiagnostic(
+							`Extension shortcut conflict: '${key}' registered by both ${existingExtensionShortcut.extensionPath} and ${shortcut.extensionPath}. Using ${shortcut.extensionPath}.`,
+							shortcut.extensionPath,
+						);
+					}
+					extensionShortcuts.set(normalizedKey, shortcut);
 				}
-				extensionShortcuts.set(normalizedKey, shortcut);
 			}
 		}
 		return extensionShortcuts;

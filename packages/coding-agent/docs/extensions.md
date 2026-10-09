@@ -252,6 +252,22 @@ Guard terminal-only behavior with `ctx.mode === "tui"` and use `ctx.hasUI` for i
 
 Keep tool and event behavior independent from rendering so non-interactive modes remain functional.
 
+### Shortcuts
+
+`pi.registerShortcut(key, options)` binds a key in the interactive editor.
+Pass a namespaced `id` so users can rebind or disable the shortcut in [`keybindings.json`](keybindings.md#extension-shortcuts):
+
+```typescript
+pi.registerShortcut("alt+o", {
+  id: "my-ext.togglePanel",
+  description: "Toggle panel",
+  handler: (ctx) => { /* ... */ },
+});
+```
+
+A default key that collides with a reserved built-in action, such as `app.clear` or `app.interrupt`, is skipped with a warning.
+Keys the user assigns to the `id` are not blocked; Pi warns about the conflict and the extension shortcut wins.
+
 <a id="error-handling"></a>
 <a id="handle-errors-and-shutdown"></a>
 
