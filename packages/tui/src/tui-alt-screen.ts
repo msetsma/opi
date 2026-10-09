@@ -994,13 +994,18 @@ export class TuiAltScreen extends TuiBase implements ViewportTUI {
 	private routeWheel(event: WheelEvent, delta: number): void {
 		let remaining = delta;
 		const seen = new Set<ScrollView>();
+		let contained = false;
 		for (const scrollView of this.currentLayout ? getScrollViewsAt(this.currentLayout, event.x, event.y) : []) {
 			seen.add(scrollView);
 			remaining = scrollView.scrollBy(remaining);
-			if (remaining === 0 || scrollView.overscroll === "contain") break;
+			if (remaining === 0) break;
+			if (scrollView.overscroll === "contain") {
+				contained = true;
+				break;
+			}
 		}
 		const primary = this.getPrimaryScrollView();
-		if (remaining !== 0 && !seen.has(primary)) primary.scrollBy(remaining);
+		if (remaining !== 0 && !contained && !seen.has(primary)) primary.scrollBy(remaining);
 		this.updateScrollbarHover(event.x, event.y);
 		this.requestRender();
 	}

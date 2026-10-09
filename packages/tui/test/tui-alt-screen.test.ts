@@ -2079,3 +2079,98 @@ describe("TuiAltScreen", () => {
 		tui.stop();
 	});
 });
+
+describe("TuiAltScreen with a side panel before the transcript", () => {
+	const panelWidth = 6;
+	const withPanel = (panel: Text | ScrollView, transcript: ScrollView) =>
+		new HStack([
+			{ component: panel, basis: panelWidth, shrink: 1 },
+			{ component: transcript, basis: 0, grow: 1, shrink: 1, minSize: 1 },
+		]);
+
+	it("copies only transcript text when selecting at x > 0", async () => {
+		const terminal = new RecordingTerminal(20, 4);
+		const tui = new TuiAltScreen(terminal);
+		const transcript = new ScrollView(new Text("alpha\nbeta\ngamma\ndelta", 0, 0), { follow: "end", primary: true });
+		tui.setLayoutRoot(withPanel(new Text("p1\np2\np3\np4", 0, 0), transcript));
+		tui.start();
+		await terminal.waitForRender();
+
+		terminal.sendInput(`\x1b[<0;${panelWidth + 1};1M`);
+		terminal.sendInput(`\x1b[<32;${panelWidth + 4};2M`);
+		terminal.sendInput(`\x1b[<3;${panelWidth + 4};2m`);
+		await terminal.waitForRender();
+
+		const clipboardWrites = terminal.events.filter(
+			(event) => event.type === "write" && event.data.includes("\x1b]52;c;"),
+		);
+		const expected = `\x1b]52;c;${Buffer.from("alpha\nbeta").toString("base64")}\x07`;
+		assert.ok(
+			clipboardWrites.some((event) => event.type === "write" && event.data.includes(expected)),
+			JSON.stringify(clipboardWrites),
+		);
+		tui.stop();
+	});
+
+	it("draws search highlights after the panel columns", async () => {
+		const terminal = new RecordingTerminal(60, 8);
+		const tui = new TuiAltScreen(terminal, undefined, undefined, {
+			searchCurrentMatchStyle: (text) => `\x1b[42m${text}\x1b[49m`,
+		});
+		const transcript = new ScrollView(new Text("first\nline 2 needle\nthird", 0, 0), {
+			follow: "end",
+			primary: true,
+		});
+		tui.setLayoutRoot(withPanel(new Text("p1\np2\np3", 0, 0), transcript));
+		tui.start();
+		await terminal.waitForRender();
+
+		terminal.sendInput("\x1b[102;6u");
+		terminal.sendInput("needle");
+		await terminal.waitForRender();
+
+		const matchLine = tui.getScreenLines().find((line) => line.includes("\x1b[42mneedle"));
+		assert.ok(matchLine, JSON.stringify(tui.getScreenLines()));
+		const prefix = matchLine.slice(0, matchLine.indexOf("\x1b[42mneedle"));
+		assert.strictEqual(visibleWidth(prefix), panelWidth + "line 2 ".length);
+		assert.strictEqual(stripTerminalSequences(prefix), "p2    line 2 ");
+		tui.stop();
+	});
+
+	const renderPanelAndTranscript = async () => {
+		const terminal = new VirtualTerminal(20, 4);
+		const tui = new TuiAltScreen(terminal);
+		const lines = (prefix: string) => Array.from({ length: 8 }, (_, index) => `${prefix}${index + 1}`).join("\n");
+		const panel = new ScrollView(new Text(lines("p"), 0, 0), { overscroll: "contain" });
+		const transcript = new ScrollView(new Text(lines("t"), 0, 0), { follow: "end", primary: true });
+		tui.setLayoutRoot(withPanel(panel, transcript));
+		tui.start();
+		await terminal.waitForRender();
+		assert.strictEqual(transcript.scrollTop, 4);
+		return { terminal, tui, panel, transcript };
+	};
+
+	it("scrolls only a contained panel scroll view under the pointer", async () => {
+		const { terminal, tui, panel, transcript } = await renderPanelAndTranscript();
+
+		terminal.sendInput("\x1b[<65;1;1M");
+		await terminal.waitForRender();
+		assert.strictEqual(panel.scrollTop, 1);
+		assert.strictEqual(transcript.scrollTop, 4);
+		assert.deepStrictEqual(
+			terminal.getViewport().map((line) => line.trimEnd()),
+			["p2    t5", "p3    t6", "p4    t7", "p5    t8"],
+		);
+		tui.stop();
+	});
+
+	it("keeps leftover wheel delta out of the transcript at a contained panel's edge", async () => {
+		const { terminal, tui, panel, transcript } = await renderPanelAndTranscript();
+
+		terminal.sendInput("\x1b[<64;1;1M");
+		await terminal.waitForRender();
+		assert.strictEqual(panel.scrollTop, 0);
+		assert.strictEqual(transcript.scrollTop, 4);
+		tui.stop();
+	});
+});
