@@ -15,7 +15,7 @@ import type { TSchema } from "typebox";
 import { KeybindingsSchema, KeybindingValueSchema } from "../src/core/keybindings-schema.ts";
 import { ModelsConfigSchema } from "../src/core/model-config.ts";
 import { SettingsSchema } from "../src/core/settings-schema.ts";
-import { ColorValueSchema, ThemeJsonSchema } from "../src/modes/interactive/theme/theme-schema.ts";
+import { ColorValueSchema, ForegroundValueSchema, ThemeJsonSchema } from "../src/modes/interactive/theme/theme-schema.ts";
 
 const packageDirectory = fileURLToPath(new URL("..", import.meta.url));
 const schemaBaseUrl = "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent";
@@ -54,7 +54,7 @@ const schemaArtifacts: readonly SchemaArtifact[] = [
 	{
 		path: "schemas/theme.schema.json",
 		schema: ThemeJsonSchema,
-		definitions: { ColorValue: ColorValueSchema },
+		definitions: { ColorValue: ColorValueSchema, ForegroundValue: ForegroundValueSchema },
 	},
 ];
 

@@ -11,7 +11,7 @@ type ThemeFile = {
 	name: string;
 	appearance?: "dark" | "light";
 	vars?: Record<string, string | number>;
-	colors: Record<string, string | number>;
+	colors: Record<string, string | number | object>;
 };
 
 /** Load a copy of a built-in theme, modified by `edit`. */
@@ -100,5 +100,46 @@ describe("theme styles", () => {
 		setTerminalColors({ foreground: { r: 200, g: 210, b: 220 }, background: { r: 10, g: 20, b: 30 } });
 		expect(colorToHex(theme.colors.text)).toBe("#c8d2dc");
 		expect(colorToHex(theme.colors.userMessageBg)).toBe("#0a141e");
+	});
+
+	it("renders text attributes from object-form foreground tokens", () => {
+		const theme = loadTheme("dark", (json) => {
+			json.colors.mdHeading = { fg: "#ff0000", bold: true };
+			json.colors.accent = { fg: "#00ff00", italic: true, underline: true };
+		});
+		const red = "\x1b[38;2;255;0;0m";
+		expect(colorToHex(theme.colors.mdHeading)).toBe("#ff0000");
+		expect(theme.getFgAnsi("mdHeading")).toBe(`${red}\x1b[1m`);
+		// A separate `\x1b[22m` lets chalk.bold re-open the bold of enclosing text, e.g. **strong** markdown.
+		expect(theme.fg("mdHeading", "x")).toBe(`${red}\x1b[1mx\x1b[22m\x1b[39m`);
+		expect(theme.fg("accent", "x")).toBe("\x1b[38;2;0;255;0m\x1b[3m\x1b[4mx\x1b[24m\x1b[23m\x1b[39m");
+		// getFgAnsi() keeps its contract that `\x1b[22m` closes everything but the color.
+		expect(theme.getFgAnsi("accent")).toBe("\x1b[38;2;0;255;0m");
+		expect(theme.style("x", { fg: "mdHeading" })).toBe(
+			styleText("x", { fg: theme.colors.mdHeading, bold: true }, "truecolor"),
+		);
+	});
+
+	it("lets omitted optional tokens inherit their fallback's attributes", () => {
+		const theme = loadTheme("dark", (json) => {
+			json.colors.muted = { fg: "#808080", italic: true };
+			json.colors.text = { fg: "#ffffff", bold: true };
+			delete json.colors.scrollbarTrack;
+			json.colors.scrollbarThumb = "#ffffff";
+		});
+		expect(theme.fg("scrollbarTrack", "x")).toBe(theme.fg("muted", "x"));
+		// An explicit value replaces the fallback entirely, attributes included.
+		expect(theme.fg("scrollbarThumb", "x")).toBe("\x1b[38;2;255;255;255mx\x1b[39m");
+	});
+
+	it("applies token attributes under call-site attributes", () => {
+		const theme = loadTheme("dark", (json) => {
+			json.colors.mdHeading = { fg: "#ff0000", bold: true };
+		});
+		const color = theme.colors.mdHeading;
+		expect(theme.style("x", { fg: "mdHeading", bold: false })).toBe(styleText("x", { fg: color }, "truecolor"));
+		expect(theme.style("x", { fg: "mdHeading", italic: true })).toBe(
+			styleText("x", { fg: color, bold: true, italic: true }, "truecolor"),
+		);
 	});
 });

@@ -1,6 +1,16 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { resetCapabilitiesCache, setCapabilities } from "@earendil-works/pi-tui";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { getMarkdownTheme, highlightCode, initTheme, theme } from "../src/modes/interactive/theme/theme.ts";
+import {
+	getMarkdownTheme,
+	highlightCode,
+	initTheme,
+	loadThemeFromPath,
+	setThemeInstance,
+	theme,
+} from "../src/modes/interactive/theme/theme.ts";
 import {
 	highlight,
 	loadAllHighlightLanguages,
@@ -126,5 +136,38 @@ describe("theme syntax highlighting", () => {
 		);
 		expect(highlightCode("@decorator", "python")[0]).toBe(`${theme.getFgAnsi("muted")}@decorator\x1b[39m`);
 		expect(highlightCode("<div></div>", "html")[0]).toContain(`${theme.getFgAnsi("syntaxKeyword")}div\x1b[39m`);
+	});
+
+	it("applies per-theme syntax scope overrides", async () => {
+		await loadAllHighlightLanguages();
+		const dir = mkdtempSync(join(tmpdir(), "pi-syntax-override-"));
+		try {
+			const themeJson = JSON.parse(
+				readFileSync(new URL("../src/modes/interactive/theme/dark.json", import.meta.url), "utf-8"),
+			) as Record<string, unknown>;
+			themeJson.name = "syntax-override";
+			themeJson.syntax = {
+				regexp: { fg: "#e0af68" },
+				meta: "accent",
+				"selector-tag": { fg: "#ff0000", underline: true },
+			};
+			const path = join(dir, "syntax-override.json");
+			writeFileSync(path, JSON.stringify(themeJson));
+			setThemeInstance(loadThemeFromPath(path, "truecolor"));
+
+			expect(highlightCode("const re = /foo+/gi;", "javascript")[0]).toContain(
+				"\x1b[38;2;224;175;104m/foo+/gi\x1b[39m",
+			);
+			// meta-keyword has no formatter of its own and falls back to the meta override.
+			expect(highlightCode("#include <stdio.h>", "c")[0]).toContain(`${theme.getFgAnsi("accent")}include\x1b[39m`);
+			// selector-tag had no default formatter.
+			expect(highlightCode("div { color: red }", "css")[0]).toContain(
+				"\x1b[38;2;255;0;0m\x1b[4mdiv\x1b[24m\x1b[39m",
+			);
+			// Scopes without an override keep the default mapping.
+			expect(highlightCode("const x = 1", "javascript")[0]).toContain(`${theme.getFgAnsi("syntaxKeyword")}const`);
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
+		}
 	});
 });
