@@ -130,7 +130,7 @@ Tests:
 - `packages/coding-agent/test/chat-viewport.test.ts`: the transcript box sits at `x === width` with a left panel, `setPanels([], [])` restores the plain tree, and panels hide below the width guard.
 - A widget-placement test modeled on #10602's `interactive-mode-widget-placement.test.ts`.
 
-Done when: all of the above pass, `widget-placement.ts` shows a right panel, the companion toggle shows and hides a panel mid-session in tmux, a tmux resize from 160 to 100 columns hides it, and the bench shows no regression.
+Done when: all of the above pass, `widget-placement.ts` shows a right panel, the companion toggle shows and hides a panel mid-session in tmux, a tmux resize to below total panel width + 40 columns hides it (for example 96 with the 24-column example panel plus the 32-column outline), and the bench shows no regression.
 
 Upstream: the measure fix can go alone. Panels need a Contribution Proposal. Earlier side-panel asks were bot-closed or marked not planned (#3769, #4992, #9238, #2820), so pitch this one as "no new concept, two placement values, tree unchanged without panels".
 
