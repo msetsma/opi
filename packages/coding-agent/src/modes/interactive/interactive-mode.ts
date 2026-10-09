@@ -565,6 +565,7 @@ export class InteractiveMode {
 		handler: (data: string) => { consume?: boolean; data?: string } | undefined;
 		unsubscribe: () => void;
 	}>();
+	private extensionOverlayHandles = new Set<OverlayHandle>();
 
 	// Extension widgets (components rendered above/below the editor)
 	private extensionWidgetsAbove = new Map<string, Component & { dispose?(): void }>();
@@ -2459,7 +2460,8 @@ export class InteractiveMode {
 		if (this.extensionEditor) {
 			this.hideExtensionEditor();
 		}
-		this.ui.hideOverlay();
+		for (const handle of this.extensionOverlayHandles) handle.hide();
+		this.extensionOverlayHandles.clear();
 		this.clearExtensionTerminalInputListeners();
 		this.setExtensionFooter(undefined);
 		this.setExtensionHeader(undefined);
@@ -2989,13 +2991,19 @@ export class InteractiveMode {
 
 		return new Promise((resolve, reject) => {
 			let component: Component & { dispose?(): void };
+			let overlayHandle: OverlayHandle | undefined;
 			let closed = false;
 
 			const close = (result: T) => {
 				if (closed) return;
 				closed = true;
-				if (isOverlay) this.ui.hideOverlay();
-				else restoreEditor();
+				if (isOverlay) {
+					// Hide only this overlay; undefined when done() fires before the overlay is shown
+					if (overlayHandle) {
+						this.extensionOverlayHandles.delete(overlayHandle);
+						overlayHandle.hide();
+					}
+				} else restoreEditor();
 				// Note: both branches above already call requestRender
 				resolve(result);
 				try {
@@ -3023,9 +3031,10 @@ export class InteractiveMode {
 							const w = (component as { width?: number }).width;
 							return w ? { width: w } : undefined;
 						};
-						const handle = this.ui.showOverlay(component, resolveOptions());
+						overlayHandle = this.ui.showOverlay(component, resolveOptions());
+						this.extensionOverlayHandles.add(overlayHandle);
 						// Expose handle to caller for visibility control
-						options?.onHandle?.(handle);
+						options?.onHandle?.(overlayHandle);
 					} else {
 						this.disposeActiveSelector();
 						this.editorContainer.clear();
