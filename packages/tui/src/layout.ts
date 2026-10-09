@@ -201,9 +201,11 @@ function layoutComponent(
 		typeof entry.basis === "number" ? entry.basis : measureWidth(context, entry.component, safeWidth),
 	);
 	const widths = allocateStackSizes(entries, intrinsicWidths, safeWidth, node.gap);
-	const intrinsicHeights = entries.map((entry, index) =>
-		measureHeight(context, entry.component, Math.max(1, widths[index]!)),
-	);
+	// Fixed-height stretch children never read their natural height; skip measuring them.
+	const intrinsicHeights =
+		height === undefined || node.align !== "stretch"
+			? entries.map((entry, index) => measureHeight(context, entry.component, Math.max(1, widths[index]!)))
+			: [];
 	const allocatedHeight =
 		height === undefined
 			? intrinsicHeights.reduce((max, childHeight) => Math.max(max, childHeight), 0)
@@ -218,8 +220,8 @@ function layoutComponent(
 	};
 	let childX = x;
 	for (let index = 0; index < entries.length; index++) {
-		const naturalChildHeight = intrinsicHeights[index]!;
-		const childHeight = node.align === "stretch" ? allocatedHeight : Math.min(allocatedHeight, naturalChildHeight);
+		const childHeight =
+			node.align === "stretch" ? allocatedHeight : Math.min(allocatedHeight, intrinsicHeights[index]!);
 		let childY = y;
 		if (node.align === "center") childY += Math.floor((allocatedHeight - childHeight) / 2);
 		else if (node.align === "end") childY += allocatedHeight - childHeight;

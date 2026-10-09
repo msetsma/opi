@@ -48,6 +48,25 @@ describe("viewport layout", () => {
 		assert.strictEqual(renderCount, 1);
 	});
 
+	it("does not render stretched scroll content during horizontal stack measurement", () => {
+		let renderCount = 0;
+		const transcript = new ScrollView({
+			render: () => {
+				renderCount += 1;
+				return ["one", "two", "three"];
+			},
+			invalidate: () => {},
+		});
+		const root = new HStack([
+			{ component: new Text("panel", 0, 0), basis: 5, shrink: 0 },
+			{ component: transcript, basis: 0, grow: 1 },
+		]);
+		renderLayoutFrame(root, 15, 3, () => {});
+		assert.strictEqual(renderCount, 1);
+		renderLayoutFrame(root, 15, 3, () => {});
+		assert.strictEqual(renderCount, 2);
+	});
+
 	it("paints only clipped rows from very large scroll content", () => {
 		const lineCount = 1_000_000_000;
 		const lines: string[] = [];
