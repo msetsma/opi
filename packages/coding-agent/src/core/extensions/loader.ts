@@ -24,6 +24,7 @@ import type {
 	EntryRenderer,
 	Extension,
 	ExtensionAPI,
+	ExtensionContext,
 	ExtensionFactory,
 	ExtensionRuntime,
 	ExtensionVirtualModel,
@@ -320,12 +321,13 @@ function createExtensionAPI(
 		registerShortcut(
 			shortcut: KeyId,
 			options: {
+				id?: string;
 				description?: string;
-				handler: (ctx: import("./types.ts").ExtensionContext) => Promise<void> | void;
+				handler: (ctx: ExtensionContext) => Promise<void> | void;
 			},
 		): void {
 			assertActive();
-			extension.shortcuts.set(shortcut, { shortcut, extensionPath: extension.path, ...options });
+			extension.shortcuts.set(options.id ?? shortcut, { shortcut, extensionPath: extension.path, ...options });
 		},
 
 		registerFlag(

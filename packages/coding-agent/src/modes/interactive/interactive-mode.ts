@@ -2282,7 +2282,10 @@ export class InteractiveMode {
 	 * Set up keyboard shortcuts registered by extensions.
 	 */
 	private setupExtensionShortcuts(extensionRunner: ExtensionRunner): void {
-		const shortcuts = extensionRunner.getShortcuts(this.keybindings.getEffectiveConfig());
+		const shortcuts = extensionRunner.getShortcuts(
+			this.keybindings.getEffectiveConfig(),
+			this.keybindings.getUserBindings(),
+		);
 		if (shortcuts.size === 0) return;
 
 		// Create a context for shortcut handlers
@@ -6988,7 +6991,10 @@ export class InteractiveMode {
 
 		// Add extension-registered shortcuts
 		const extensionRunner = this.session.extensionRunner;
-		const shortcuts = extensionRunner.getShortcuts(this.keybindings.getEffectiveConfig());
+		const shortcuts = extensionRunner.getShortcuts(
+			this.keybindings.getEffectiveConfig(),
+			this.keybindings.getUserBindings(),
+		);
 		if (shortcuts.size > 0) {
 			hotkeys += `
 **Extensions**
@@ -6998,7 +7004,7 @@ export class InteractiveMode {
 			for (const [key, shortcut] of shortcuts) {
 				const description = shortcut.description ?? shortcut.extensionPath;
 				const keyDisplay = formatKeyText(key, { capitalize: true });
-				hotkeys += `| \`${keyDisplay}\` | ${description} |\n`;
+				hotkeys += `| \`${keyDisplay}\` | ${description}${shortcut.id ? ` (\`${shortcut.id}\`)` : ""} |\n`;
 			}
 		}
 

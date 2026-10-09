@@ -1671,10 +1671,18 @@ export interface ExtensionAPI {
 	/** Register a custom command. */
 	registerCommand(name: string, options: Omit<RegisteredCommand, "name" | "sourceInfo">): void;
 
-	/** Register a keyboard shortcut. */
+	/**
+	 * Register a keyboard shortcut.
+	 *
+	 * Pass `id` (e.g. "my-ext.toggle") to let users rebind the shortcut in keybindings.json:
+	 * a key or list of keys replaces `shortcut`, and `[]` disables it. User-chosen keys may
+	 * override reserved built-in keys; the default `shortcut` may not.
+	 */
 	registerShortcut(
 		shortcut: KeyId,
 		options: {
+			/** Keybinding id users can set in keybindings.json. Namespace it, e.g. "my-ext.toggle". */
+			id?: string;
 			description?: string;
 			handler: (ctx: ExtensionContext) => Promise<void> | void;
 		},
@@ -2085,6 +2093,8 @@ export interface ExtensionFlag {
 
 export interface ExtensionShortcut {
 	shortcut: KeyId;
+	/** Keybinding id for user overrides in keybindings.json. */
+	id?: string;
 	description?: string;
 	handler: (ctx: ExtensionContext) => Promise<void> | void;
 	extensionPath: string;
@@ -2269,7 +2279,8 @@ export interface Extension {
 	entryRenderers?: Map<string, EntryRenderer>;
 	commands: Map<string, RegisteredCommand>;
 	flags: Map<string, ExtensionFlag>;
-	shortcuts: Map<KeyId, ExtensionShortcut>;
+	/** Keyed by shortcut id, or by the default key when no id is given. */
+	shortcuts: Map<string, ExtensionShortcut>;
 }
 
 /** Result of loading extensions. */
