@@ -114,6 +114,31 @@ See [Compaction Reference](compaction.md) for trigger, summarization, and valida
 
 See [Themes](themes.md) and [Terminal Setup](terminal-setup.md) for format and platform details.
 
+### Glyphs
+
+`glyphs` sets the characters used for borders, rules, scrollbars, selection cursors, and session trees. They live in settings rather than in themes, so they stay the same when the theme switches between light and dark.
+
+```json
+{ "glyphs": { "preset": "ascii", "cursor": "❯ " } }
+```
+
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `glyphs.preset` | `"unicode" \| "ascii"` | `"unicode"` | Base glyph set. `ascii` uses no box-drawing or arrow characters. |
+| `glyphs.border` | string | `"─"` | Editor borders and horizontal separators. |
+| `glyphs.rule` | string | `"─"` | Markdown horizontal rules. |
+| `glyphs.quote` | string | `"│"` | Markdown blockquote border. |
+| `glyphs.scrollbarTrack` | string | `"│"` | Fullscreen scrollbar track. |
+| `glyphs.scrollbarThumb` | string | `"┃"` | Fullscreen scrollbar thumb. |
+| `glyphs.scrollbarThumbActive` | string | `"█"` | Fullscreen scrollbar thumb while scrolling. |
+| `glyphs.cursor` | string | `"→ "` | Selection cursor in lists and selectors. Any width; other rows are padded to match. |
+| `glyphs.treeVertical` | string | `"│"` | Tree line that continues past a child in `/tree` and `/resume`. |
+| `glyphs.treeBranch` | string | `"├"` | Tree connector for a child with later siblings. |
+| `glyphs.treeLast` | string | `"└"` | Tree connector for the last child. |
+| `glyphs.treeHorizontal` | string | `"─"` | Tree connector stem. |
+
+The `ascii` preset uses `-` for lines, `|` for vertical lines and `treeBranch`, `#` for the scrollbar thumb, `` ` `` for `treeLast`, and `"> "` for the cursor. Overrides apply on top of the preset. Every key except `cursor` must be exactly one terminal cell wide; overrides of any other width are ignored.
+
 ## Network and retries
 
 | Setting | Type | Default | Description |

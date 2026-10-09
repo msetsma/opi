@@ -1,6 +1,11 @@
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
-import type { ScrollViewScrollbar, TerminalCapabilities, WheelScrollLines } from "@earendil-works/pi-tui";
+import {
+	type ScrollViewScrollbar,
+	type TerminalCapabilities,
+	visibleWidth,
+	type WheelScrollLines,
+} from "@earendil-works/pi-tui";
 import { randomUUID } from "crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
@@ -9,12 +14,13 @@ import { CONFIG_DIR_NAME, getAgentDir } from "../config.ts";
 import { normalizePath, resolvePath } from "../utils/paths.ts";
 import { stripBom } from "../utils/text.ts";
 import { DEFAULT_HTTP_IDLE_TIMEOUT_MS, parseHttpIdleTimeoutMs } from "./http-dispatcher.ts";
-import { SETTINGS_DEFAULTS } from "./settings-defaults.ts";
+import { GLYPH_PRESETS, SETTINGS_DEFAULTS } from "./settings-defaults.ts";
 import type {
 	CacheWarmingMode,
 	CompactionModelOverride,
 	DefaultProjectTrust,
 	FullscreenExitOutput,
+	Glyphs,
 	MermaidRenderingMode,
 	PackageSource,
 	QuietStartup,
@@ -34,6 +40,9 @@ export type {
 	CompactionSettings,
 	DefaultProjectTrust,
 	FullscreenExitOutput,
+	GlyphPreset,
+	Glyphs,
+	GlyphsSettings,
 	ImageSettings,
 	MarkdownSettings,
 	MermaidRenderingMode,
@@ -1414,6 +1423,17 @@ export class SettingsManager {
 		this.globalSettings.markdown.mermaid = mode;
 		this.markModified("markdown", "mermaid");
 		this.save();
+	}
+
+	/** The preset's glyphs with overrides applied. One-cell overrides of another width are dropped. */
+	getGlyphs(): Glyphs {
+		const { preset, ...overrides } = this.settings.glyphs ?? {};
+		const glyphs = { ...GLYPH_PRESETS[preset === "ascii" ? "ascii" : SETTINGS_DEFAULTS.glyphs.preset] };
+		for (const name of Object.keys(glyphs) as (keyof Glyphs)[]) {
+			const value = overrides[name];
+			if (typeof value === "string" && (name === "cursor" || visibleWidth(value) === 1)) glyphs[name] = value;
+		}
+		return glyphs;
 	}
 
 	getWarnings(): WarningSettings {

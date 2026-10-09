@@ -579,6 +579,69 @@
         }
       }
     },
+    "glyphs": {
+      "type": "object",
+      "properties": {
+        "preset": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "unicode"
+            },
+            {
+              "type": "string",
+              "const": "ascii"
+            }
+          ],
+          "default": "unicode"
+        },
+        "border": {
+          "type": "string",
+          "description": "Editor and panel border line. One cell."
+        },
+        "rule": {
+          "type": "string",
+          "description": "Markdown horizontal rule. One cell."
+        },
+        "quote": {
+          "type": "string",
+          "description": "Markdown blockquote border. One cell."
+        },
+        "scrollbarTrack": {
+          "type": "string",
+          "description": "Fullscreen scrollbar track. One cell."
+        },
+        "scrollbarThumb": {
+          "type": "string",
+          "description": "Fullscreen scrollbar thumb. One cell."
+        },
+        "scrollbarThumbActive": {
+          "type": "string",
+          "description": "Fullscreen scrollbar thumb while scrolling. One cell."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "Selection cursor in lists and selectors. Any width."
+        },
+        "treeVertical": {
+          "type": "string",
+          "description": "Tree line continuing past a child. One cell."
+        },
+        "treeBranch": {
+          "type": "string",
+          "description": "Tree connector for a child with later siblings. One cell."
+        },
+        "treeLast": {
+          "type": "string",
+          "description": "Tree connector for the last child. One cell."
+        },
+        "treeHorizontal": {
+          "type": "string",
+          "description": "Tree connector stem. One cell."
+        }
+      },
+      "description": "Glyphs for borders, rules, scrollbars, cursors, and trees. Overrides apply on top of the preset; one-cell overrides of another width are ignored."
+    },
     "warnings": {
       "type": "object",
       "properties": {

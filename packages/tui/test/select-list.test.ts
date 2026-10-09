@@ -51,6 +51,18 @@ describe("SelectList", () => {
 		assert.equal(visibleIndexOf(rendered[0], "short description"), visibleIndexOf(rendered[1], "long description"));
 	});
 
+	it("pads unselected rows to the width of a custom cursor", () => {
+		const items = [
+			{ value: "a", label: "a" },
+			{ value: "b", label: "b" },
+		];
+
+		const rendered = new SelectList(items, 5, { ...testTheme, cursor: ">" }).render(80);
+
+		assert.equal(rendered[0], ">a");
+		assert.equal(rendered[1], " b");
+	});
+
 	it("uses the configured minimum primary column width", () => {
 		const items = [
 			{ value: "a", label: "a", description: "first" },

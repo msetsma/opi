@@ -4,7 +4,7 @@
  */
 
 import { type Color, foregroundAnsi, mixColors, parseColor, Text, type TUI } from "@earendil-works/pi-tui";
-import { theme } from "../theme/theme.ts";
+import { selectionCursor, theme } from "../theme/theme.ts";
 import { ExtensionSelectorComponent } from "./extension-selector.ts";
 
 /** The four colors of the Radius logo, in the order they stream across the text. */
@@ -78,12 +78,12 @@ class RadiusLoginMenuComponent extends ExtensionSelectorComponent {
 	override render(width: number): string[] {
 		const lines = super.render(width);
 		const { label, text } = this.radiusOption;
-		const selectedLine = new Text(theme.fg("accent", "→ ") + theme.fg("accent", label), 1, 0).render(width)[0];
+		const selectedLine = new Text(selectionCursor(true) + theme.fg("accent", label), 1, 0).render(width)[0];
 		const index = selectedLine === undefined ? -1 : lines.indexOf(selectedLine);
 		this.animating = index >= 0;
 		if (this.animating) {
 			const shimmer = radiusShimmer(text, performance.now() - this.animationStart);
-			const animatedLine = theme.fg("accent", "→ ") + shimmer + label.slice(text.length);
+			const animatedLine = selectionCursor(true) + shimmer + label.slice(text.length);
 			lines[index] = new Text(animatedLine, 1, 0).render(width)[0] ?? "";
 		}
 		return lines;

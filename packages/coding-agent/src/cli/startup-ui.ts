@@ -24,6 +24,7 @@ import {
 	loadThemeFromPath,
 	markTerminalColorsPending,
 	resolveThemeSetting,
+	setGlyphs,
 	setRegisteredThemes,
 	setTerminalColors,
 	setTheme,
@@ -84,6 +85,7 @@ async function loadStartupThemes(settingsManager: SettingsManager): Promise<Them
 
 export async function createStartupTui(settingsManager: SettingsManager): Promise<TUI> {
 	setCapabilityOverrides(settingsManager.getTerminalCapabilityOverrides());
+	setGlyphs(settingsManager.getGlyphs());
 	setRegisteredThemes(await loadStartupThemes(settingsManager));
 	// The system theme starts in grayscale until the terminal reports its colors.
 	markTerminalColorsPending();

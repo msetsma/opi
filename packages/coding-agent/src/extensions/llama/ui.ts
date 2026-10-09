@@ -16,7 +16,7 @@ import type { ExtensionCommandContext } from "../../core/extensions/types.ts";
 import type { KeybindingsManager } from "../../core/keybindings.ts";
 import { DynamicBorder } from "../../modes/interactive/components/dynamic-border.ts";
 import { keyHint } from "../../modes/interactive/components/keybinding-hints.ts";
-import type { Theme } from "../../modes/interactive/theme/theme.ts";
+import { getGlyphs, type Theme } from "../../modes/interactive/theme/theme.ts";
 import type { LlamaModelInfo, LlamaProgress } from "./client.ts";
 import type { HuggingFaceModel } from "./huggingface.ts";
 
@@ -58,6 +58,7 @@ function selectTheme(theme: Theme) {
 		description: (text: string) => theme.fg("muted", text),
 		scrollInfo: (text: string) => theme.fg("dim", text),
 		noMatch: (text: string) => theme.fg("warning", text),
+		cursor: getGlyphs().cursor,
 	};
 }
 
@@ -154,7 +155,8 @@ class HuggingFaceSearch extends Container implements Focusable {
 		for (let index = start; index < end; index++) {
 			const model = this.filteredResults[index];
 			if (!model) continue;
-			const prefix = index === this.selectedIndex ? "→ " : "  ";
+			const cursor = getGlyphs().cursor;
+			const prefix = index === this.selectedIndex ? cursor : " ".repeat(visibleWidth(cursor));
 			const details = `${compactCount(model.downloads)} downloads`;
 			this.resultsContainer.addChild(
 				new Text(

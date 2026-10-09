@@ -1,5 +1,5 @@
 import type { Component } from "@earendil-works/pi-tui";
-import { theme } from "../theme/theme.ts";
+import { getGlyphs, theme } from "../theme/theme.ts";
 
 /**
  * Dynamic border component that adjusts to viewport width.
@@ -20,6 +20,6 @@ export class DynamicBorder implements Component {
 	}
 
 	render(width: number): string[] {
-		return [this.color("─".repeat(Math.max(1, width)))];
+		return [this.color(getGlyphs().border.repeat(Math.max(1, width)))];
 	}
 }

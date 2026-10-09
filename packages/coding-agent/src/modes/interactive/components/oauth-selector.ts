@@ -8,7 +8,7 @@ import {
 	Spacer,
 	TruncatedText,
 } from "@earendil-works/pi-tui";
-import { theme } from "../theme/theme.ts";
+import { selectionCursor, theme } from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
 
 export type AuthSelectorProvider = {
@@ -162,11 +162,11 @@ export class OAuthSelectorComponent extends Container implements Focusable {
 				: "";
 			let line = "";
 			if (isSelected) {
-				const prefix = theme.fg("accent", "→ ");
+				const prefix = selectionCursor(true);
 				const text = theme.fg("accent", provider.name);
 				line = prefix + text + authTypeLabel + statusIndicator;
 			} else {
-				const text = `  ${theme.fg("text", provider.name)}`;
+				const text = selectionCursor(false) + theme.fg("text", provider.name);
 				line = text + authTypeLabel + statusIndicator;
 			}
 

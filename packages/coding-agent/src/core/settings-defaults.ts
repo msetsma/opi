@@ -1,4 +1,5 @@
 import { DEFAULT_MAX_AGENT_RETRY_DELAY_MS } from "@earendil-works/pi-ai/utils/retry";
+import type { GlyphPreset, Glyphs } from "./settings-schema.ts";
 
 /** Runtime defaults shared by settings accessors and the published JSON Schema. */
 export const SETTINGS_DEFAULTS = {
@@ -50,6 +51,9 @@ export const SETTINGS_DEFAULTS = {
 		codeBlockIndent: "  ",
 		mermaid: "streaming",
 	},
+	glyphs: {
+		preset: "unicode",
+	},
 	warnings: {
 		anthropicExtraUsage: true,
 	},
@@ -64,3 +68,33 @@ export const SETTINGS_DEFAULTS = {
 	fullscreenCopyOnSelect: true,
 	fullscreenWheelScrollLines: "auto",
 } as const;
+
+/** Built-in glyph sets for the `glyphs` setting. */
+export const GLYPH_PRESETS: Record<GlyphPreset, Glyphs> = {
+	unicode: {
+		border: "─",
+		rule: "─",
+		quote: "│",
+		scrollbarTrack: "│",
+		scrollbarThumb: "┃",
+		scrollbarThumbActive: "█",
+		cursor: "→ ",
+		treeVertical: "│",
+		treeBranch: "├",
+		treeLast: "└",
+		treeHorizontal: "─",
+	},
+	ascii: {
+		border: "-",
+		rule: "-",
+		quote: "|",
+		scrollbarTrack: "|",
+		scrollbarThumb: "#",
+		scrollbarThumbActive: "#",
+		cursor: "> ",
+		treeVertical: "|",
+		treeBranch: "|",
+		treeLast: "`",
+		treeHorizontal: "-",
+	},
+};

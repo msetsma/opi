@@ -13,7 +13,7 @@ import {
 	wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import type { SessionTreeNode } from "../../../core/session-manager.ts";
-import { theme } from "../theme/theme.ts";
+import { getGlyphs, theme } from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
 import { formatKeyText, keyHint } from "./keybinding-hints.ts";
 
@@ -706,6 +706,7 @@ class TreeList implements Component {
 			const totalChars = displayIndent * 3;
 			const prefixChars: string[] = [];
 			const isFolded = this.foldedNodes.has(entry.id);
+			const glyphs = getGlyphs();
 			for (let i = 0; i < totalChars; i++) {
 				const level = Math.floor(i / 3);
 				const posInLevel = i % 3;
@@ -714,17 +715,17 @@ class TreeList implements Component {
 				const gutter = flatNode.gutters.find((g) => g.position === level);
 				if (gutter) {
 					if (posInLevel === 0) {
-						prefixChars.push(gutter.show ? "│" : " ");
+						prefixChars.push(gutter.show ? glyphs.treeVertical : " ");
 					} else {
 						prefixChars.push(" ");
 					}
 				} else if (connector && level === connectorPosition) {
 					// Connector at this level, with fold indicator
 					if (posInLevel === 0) {
-						prefixChars.push(flatNode.isLast ? "└" : "├");
+						prefixChars.push(flatNode.isLast ? glyphs.treeLast : glyphs.treeBranch);
 					} else if (posInLevel === 1) {
 						const foldable = this.isFoldable(entry.id);
-						prefixChars.push(isFolded ? "⊞" : foldable ? "⊟" : "─");
+						prefixChars.push(isFolded ? "⊞" : foldable ? "⊟" : glyphs.treeHorizontal);
 					} else {
 						prefixChars.push(" ");
 					}

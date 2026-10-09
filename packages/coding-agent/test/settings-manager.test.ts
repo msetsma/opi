@@ -598,6 +598,23 @@ describe("SettingsManager", () => {
 		});
 	});
 
+	describe("glyphs", () => {
+		it("defaults to the unicode preset", () => {
+			expect(SettingsManager.inMemory().getGlyphs().border).toBe("─");
+		});
+
+		it("applies preset overrides and drops one-cell overrides of another width", () => {
+			const glyphs = SettingsManager.inMemory({
+				glyphs: { preset: "ascii", quote: "▌", border: "══", cursor: "❯" },
+			}).getGlyphs();
+
+			expect(glyphs.quote).toBe("▌");
+			expect(glyphs.border).toBe("-");
+			expect(glyphs.cursor).toBe("❯");
+			expect(glyphs.rule).toBe("-");
+		});
+	});
+
 	describe("shellCommandPrefix", () => {
 		it("should load shellCommandPrefix from settings", () => {
 			const settingsPath = join(agentDir, "settings.json");

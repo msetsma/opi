@@ -141,6 +141,33 @@ const MarkdownSettingsSchema = Type.Object({
 	),
 });
 
+function glyph(description: string) {
+	return Type.Optional(Type.String({ description }));
+}
+
+const GlyphsSettingsSchema = Type.Object(
+	{
+		preset: Type.Optional(
+			Type.Union([Type.Literal("unicode"), Type.Literal("ascii")], { default: SETTINGS_DEFAULTS.glyphs.preset }),
+		),
+		border: glyph("Editor and panel border line. One cell."),
+		rule: glyph("Markdown horizontal rule. One cell."),
+		quote: glyph("Markdown blockquote border. One cell."),
+		scrollbarTrack: glyph("Fullscreen scrollbar track. One cell."),
+		scrollbarThumb: glyph("Fullscreen scrollbar thumb. One cell."),
+		scrollbarThumbActive: glyph("Fullscreen scrollbar thumb while scrolling. One cell."),
+		cursor: glyph("Selection cursor in lists and selectors. Any width."),
+		treeVertical: glyph("Tree line continuing past a child. One cell."),
+		treeBranch: glyph("Tree connector for a child with later siblings. One cell."),
+		treeLast: glyph("Tree connector for the last child. One cell."),
+		treeHorizontal: glyph("Tree connector stem. One cell."),
+	},
+	{
+		description:
+			"Glyphs for borders, rules, scrollbars, cursors, and trees. Overrides apply on top of the preset; one-cell overrides of another width are ignored.",
+	},
+);
+
 const WarningSettingsSchema = Type.Object({
 	anthropicExtraUsage: Type.Optional(Type.Boolean({ default: SETTINGS_DEFAULTS.warnings.anthropicExtraUsage })),
 });
@@ -377,6 +404,7 @@ export const SettingsSchema = Type.Object(
 			Type.Boolean({ description: "Show the terminal cursor while still positioning it for IME." }),
 		),
 		markdown: Type.Optional(MarkdownSettingsSchema),
+		glyphs: Type.Optional(GlyphsSettingsSchema),
 		warnings: Type.Optional(WarningSettingsSchema),
 		codemode: Type.Optional(CodemodeSettingsSchema),
 		sessionDir: Type.Optional(
@@ -459,6 +487,9 @@ export interface ThinkingBudgetsSettings extends Static<typeof ThinkingBudgetsSe
 export type MermaidRenderingMode = NonNullable<Static<typeof MarkdownSettingsSchema>["mermaid"]>;
 export interface MarkdownSettings extends Static<typeof MarkdownSettingsSchema> {}
 export interface WarningSettings extends Static<typeof WarningSettingsSchema> {}
+export interface GlyphsSettings extends Static<typeof GlyphsSettingsSchema> {}
+export type GlyphPreset = NonNullable<GlyphsSettings["preset"]>;
+export type Glyphs = Required<Omit<GlyphsSettings, "preset">>;
 export type CodemodeMode = Static<typeof CodemodeModeSchema>;
 export interface CodemodeSettings extends Static<typeof CodemodeSettingsSchema> {}
 export type DefaultProjectTrust = NonNullable<SettingsInput["defaultProjectTrust"]>;

@@ -21,9 +21,12 @@ import {
 	type TerminalColorMode,
 	type TerminalColors,
 	type TextAttributes,
+	visibleWidth,
 } from "@earendil-works/pi-tui";
 import chalk from "chalk";
 import { getCustomThemesDir, getThemesDir } from "../../../config.ts";
+import { GLYPH_PRESETS } from "../../../core/settings-defaults.ts";
+import type { Glyphs } from "../../../core/settings-schema.ts";
 import type { SourceInfo } from "../../../core/source-info.ts";
 import { closeWatcher, watchWithErrorHandler } from "../../../utils/fs-watch.ts";
 import { highlight, supportsLanguage } from "../../../utils/syntax-highlight.ts";
@@ -717,6 +720,31 @@ function setGlobalTheme(t: Theme): void {
 	(globalThis as Record<symbol, Theme>)[THEME_KEY_OLD] = t;
 }
 
+// Glyphs come from settings, not the theme, so they survive theme switches. Shared like the theme.
+const GLYPHS_KEY = Symbol.for("@earendil-works/pi-coding-agent:glyphs");
+
+export function getGlyphs(): Glyphs {
+	return (globalThis as Record<symbol, Glyphs | undefined>)[GLYPHS_KEY] ?? GLYPH_PRESETS.unicode;
+}
+
+/** Set the glyphs from `SettingsManager.getGlyphs()`. Returns true when they changed. */
+export function setGlyphs(glyphs: Glyphs): boolean {
+	const changed = JSON.stringify(glyphs) !== JSON.stringify(getGlyphs());
+	(globalThis as Record<symbol, Glyphs>)[GLYPHS_KEY] = glyphs;
+	return changed;
+}
+
+/** Wrap a border color so the "─" lines in the border text use the border glyph. */
+export function withBorderGlyph(color: (text: string) => string): (text: string) => string {
+	return (text) => color(text.replaceAll("─", getGlyphs().border));
+}
+
+/** The accent selection cursor, or blank padding of the same width for unselected rows. */
+export function selectionCursor(selected: boolean): string {
+	const cursor = getGlyphs().cursor;
+	return selected ? theme.fg("accent", cursor) : " ".repeat(visibleWidth(cursor));
+}
+
 let currentThemeName: string | undefined;
 let themeWatcher: fs.FSWatcher | undefined;
 let themeReloadTimer: NodeJS.Timeout | undefined;
@@ -1090,8 +1118,8 @@ export function getMarkdownTheme(): MarkdownTheme {
 		codeBlock: (text: string) => theme.fg("mdCodeBlock", text),
 		codeBlockBorder: (text: string) => theme.fg("mdCodeBlockBorder", text),
 		quote: (text: string) => theme.fg("mdQuote", text),
-		quoteBorder: (text: string) => theme.fg("mdQuoteBorder", text),
-		hr: (text: string) => theme.fg("mdHr", text),
+		quoteBorder: (text: string) => theme.fg("mdQuoteBorder", text.replace("│", getGlyphs().quote)),
+		hr: (text: string) => theme.fg("mdHr", text.replaceAll("─", getGlyphs().rule)),
 		listBullet: (text: string) => theme.fg("mdListBullet", text),
 		bold: (text: string) => theme.bold(text),
 		italic: (text: string) => theme.italic(text),
@@ -1127,12 +1155,15 @@ export function getSelectListTheme(): SelectListTheme {
 		description: (text: string) => theme.fg("muted", text),
 		scrollInfo: (text: string) => theme.fg("muted", text),
 		noMatch: (text: string) => theme.fg("muted", text),
+		get cursor() {
+			return getGlyphs().cursor;
+		},
 	};
 }
 
 export function getEditorTheme(): EditorTheme {
 	return {
-		borderColor: (text: string) => theme.fg("borderMuted", text),
+		borderColor: withBorderGlyph((text) => theme.fg("borderMuted", text)),
 		selectList: getSelectListTheme(),
 	};
 }
@@ -1142,7 +1173,7 @@ export function getSettingsListTheme(): SettingsListTheme {
 		label: (text: string, selected: boolean) => (selected ? theme.fg("accent", text) : text),
 		value: (text: string, selected: boolean) => (selected ? theme.fg("accent", text) : theme.fg("muted", text)),
 		description: (text: string) => theme.fg("dim", text),
-		cursor: theme.fg("accent", "→ "),
+		cursor: selectionCursor(true),
 		hint: (text: string) => theme.fg("dim", text),
 	};
 }

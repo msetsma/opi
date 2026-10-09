@@ -191,15 +191,18 @@ import {
 	getAvailableThemes,
 	getAvailableThemesWithPaths,
 	getEditorTheme,
+	getGlyphs,
 	getMarkdownTheme,
 	getThemeByName,
 	onThemeChange,
 	SYSTEM_THEME_NAME,
+	setGlyphs,
 	setRegisteredThemes,
 	stopThemeWatcher,
 	Theme,
 	type ThemeColor,
 	theme,
+	withBorderGlyph,
 } from "./theme/theme.ts";
 import { InteractiveThemeController } from "./theme/theme-controller.ts";
 import { createInteractiveTui, createInteractiveTuiReference } from "./tui-renderer.ts";
@@ -650,6 +653,7 @@ export class InteractiveMode {
 	constructor(runtimeHost: AgentSessionRuntime, options: InteractiveModeOptions = {}) {
 		this.runtimeHost = runtimeHost;
 		setCapabilityOverrides(this.settingsManager.getTerminalCapabilityOverrides());
+		setGlyphs(this.settingsManager.getGlyphs());
 		const tuiMode = options.tuiMode ?? this.settingsManager.getTuiMode();
 		this.options = { ...options, tuiMode };
 		this.autoTrustOnReloadCwd = options.autoTrustOnReloadCwd;
@@ -1016,8 +1020,10 @@ export class InteractiveMode {
 			widgetsBelow: this.widgetContainerBelow,
 			footer: this.footerContainer,
 			scrollbar: this.settingsManager.getFullscreenScrollbar(),
-			scrollbarTrackStyle: (text) => theme.fg("scrollbarTrack", text),
-			scrollbarThumbStyle: (text) => theme.fg("scrollbarThumb", text),
+			scrollbarTrackStyle: () => theme.fg("scrollbarTrack", getGlyphs().scrollbarTrack),
+			// The layout passes "█" while scrolling and "┃" otherwise.
+			scrollbarThumbStyle: (text) =>
+				theme.fg("scrollbarThumb", text === "█" ? getGlyphs().scrollbarThumbActive : getGlyphs().scrollbarThumb),
 		});
 		this.chatViewport = viewport;
 		this.transcriptScrollView = viewport.transcript;
@@ -2102,6 +2108,8 @@ export class InteractiveMode {
 
 	private applyRuntimeSettings(): void {
 		setCapabilityOverrides(this.settingsManager.getTerminalCapabilityOverrides());
+		// Runs on every /new, /resume and fork, so only re-render when the glyphs changed.
+		if (setGlyphs(this.settingsManager.getGlyphs())) this.ui.invalidate();
 		this.ensurePngTranscoder();
 		configureHttpDispatcher(this.settingsManager.getHttpIdleTimeoutMs());
 		this.applyFullscreenScrollbarSetting();
@@ -4606,10 +4614,10 @@ export class InteractiveMode {
 
 	private updateEditorBorderColor(): void {
 		if (this.isBashMode) {
-			this.editor.borderColor = theme.getBashModeBorderColor();
+			this.editor.borderColor = withBorderGlyph(theme.getBashModeBorderColor());
 		} else {
 			const level = this.session.thinkingLevel || "off";
-			this.editor.borderColor = theme.getThinkingBorderColor(level);
+			this.editor.borderColor = withBorderGlyph(theme.getThinkingBorderColor(level));
 		}
 		this.activeStatusIndicator?.invalidate();
 		this.ui.requestRender();

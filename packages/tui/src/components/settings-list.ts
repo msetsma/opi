@@ -137,7 +137,7 @@ export class SettingsList implements Component {
 			if (!item) continue;
 
 			const isSelected = i === this.selectedIndex;
-			const prefix = isSelected ? this.theme.cursor : "  ";
+			const prefix = isSelected ? this.theme.cursor : " ".repeat(visibleWidth(this.theme.cursor));
 			const prefixWidth = visibleWidth(prefix);
 
 			// Pad label to align values

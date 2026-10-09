@@ -21,6 +21,8 @@ export interface SelectListTheme {
 	description: (text: string) => string;
 	scrollInfo: (text: string) => string;
 	noMatch: (text: string) => string;
+	/** Prefix for the selected item. Defaults to "→ "; other items get blank padding of the same width. */
+	cursor?: string;
 }
 
 export interface SelectListTruncatePrimaryContext {
@@ -187,7 +189,8 @@ export class SelectList implements Component {
 		descriptionSingleLine: string | undefined,
 		primaryColumnWidth: number,
 	): string {
-		const prefix = isSelected ? "→ " : "  ";
+		const cursor = this.theme.cursor ?? "→ ";
+		const prefix = isSelected ? cursor : " ".repeat(visibleWidth(cursor));
 		const prefixWidth = visibleWidth(prefix);
 
 		if (descriptionSingleLine && width > 40) {

@@ -40,6 +40,19 @@ describe("SettingsList", () => {
 		assert.deepStrictEqual(changes, [{ id: "tui-mode", value: "fullscreen" }]);
 	});
 
+	it("aligns unselected rows with a cursor that is not two cells wide", () => {
+		const twoItems = [...items, { id: "theme", label: "Theme", currentValue: "dark" }];
+		const lines = new SettingsList(
+			twoItems,
+			10,
+			{ ...testTheme, cursor: "❯ ▸ " },
+			() => {},
+			() => {},
+		).render(80);
+
+		assert.equal(lines[0]?.indexOf("regular"), lines[1]?.indexOf("dark"));
+	});
+
 	it("keeps Space as a change shortcut before a search query is entered", () => {
 		const changes: Array<{ id: string; value: string }> = [];
 		const list = new SettingsList(
