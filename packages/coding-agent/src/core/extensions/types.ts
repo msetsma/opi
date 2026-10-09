@@ -231,7 +231,10 @@ export interface ExtensionUIContext {
 		) => (Component & { dispose?(): void }) | Promise<Component & { dispose?(): void }>,
 		options?: {
 			overlay?: boolean;
-			/** Overlay positioning/sizing options. Can be static or a function for dynamic updates. */
+			/**
+			 * Overlay positioning/sizing options. A function is evaluated once when the overlay is shown.
+			 * For dynamic updates, mutate the returned object: the overlay keeps it by reference and re-reads it every render.
+			 */
 			overlayOptions?: OverlayOptions | (() => OverlayOptions);
 			/** Called with the overlay handle after the overlay is shown. Use to control visibility. */
 			onHandle?: (handle: OverlayHandle) => void;
