@@ -1,4 +1,4 @@
-import { type Component, ScrollView, type ScrollViewScrollbar, VStack } from "@earendil-works/pi-tui";
+import { type Component, HStack, ScrollView, type ScrollViewScrollbar, VStack } from "@earendil-works/pi-tui";
 
 export interface ChatViewportOptions {
 	readonly document: Component;
@@ -13,10 +13,22 @@ export interface ChatViewportOptions {
 	readonly scrollbarThumbStyle?: (text: string) => string;
 }
 
+/** A side panel beside the transcript. */
+export interface ChatViewportPanel {
+	readonly component: Component;
+	/** Column width in cells. Default 30. */
+	readonly width?: number;
+}
+
 export interface ChatViewport {
 	readonly root: Component;
 	readonly transcript: ScrollView;
+	/** Replace the side panels. Panels hide while the viewport is narrower than their total width plus 40 columns. */
+	setPanels(left: readonly ChatViewportPanel[], right: readonly ChatViewportPanel[]): void;
 }
+
+const DEFAULT_PANEL_WIDTH = 30;
+const MIN_TRANSCRIPT_WIDTH = 40;
 
 /** Shared fullscreen transcript and fixed input-dock layout. */
 export function createChatViewport(options: ChatViewportOptions): ChatViewport {
@@ -36,11 +48,27 @@ export function createChatViewport(options: ChatViewportOptions): ChatViewport {
 		...(options.widgetsBelow === undefined ? [] : [{ component: options.widgetsBelow, shrink: 1, minSize: 0 }]),
 		{ component: options.footer, shrink: 1, minSize: 0 },
 	]);
+	const body = new HStack();
+	const setPanels = (left: readonly ChatViewportPanel[], right: readonly ChatViewportPanel[]): void => {
+		const totalPanelWidth = [...left, ...right].reduce((sum, panel) => sum + (panel.width ?? DEFAULT_PANEL_WIDTH), 0);
+		const addPanel = (panel: ChatViewportPanel): void =>
+			body.addChild(panel.component, {
+				basis: panel.width ?? DEFAULT_PANEL_WIDTH,
+				shrink: 1,
+				visible: (viewport) => viewport.width >= totalPanelWidth + MIN_TRANSCRIPT_WIDTH,
+			});
+		body.clear();
+		left.forEach(addPanel);
+		body.addChild(transcript, { basis: 0, grow: 1, shrink: 1, minSize: 1 });
+		right.forEach(addPanel);
+	};
+	setPanels([], []);
 	return {
 		transcript,
 		root: new VStack([
-			{ component: transcript, basis: 0, grow: 1, shrink: 1, minSize: 1 },
+			{ component: body, basis: 0, grow: 1, shrink: 1, minSize: 1 },
 			{ component: dock, basis: "auto", grow: 0, shrink: 1, minSize: 1 },
 		]),
+		setPanels,
 	};
 }

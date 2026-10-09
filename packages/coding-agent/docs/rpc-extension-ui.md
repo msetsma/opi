@@ -141,7 +141,7 @@ Set or clear a widget (block of text lines) displayed above or below the editor.
 }
 ```
 
-Send `widgetLines: undefined` (or omit it) to clear the widget. The `widgetPlacement` field is `"aboveEditor"` (default), `"belowEditor"`, or one of the border placements (`"borderTopLeft"`, `"borderTopRight"`, `"borderBottomLeft"`, `"borderBottomRight"`); border placements show one line on the editor's border. Only string arrays are supported in RPC mode; component factories are ignored.
+Send `widgetLines: undefined` (or omit it) to clear the widget. The `widgetPlacement` field is `"aboveEditor"` (default), `"belowEditor"`, or one of the border placements (`"borderTopLeft"`, `"borderTopRight"`, `"borderBottomLeft"`, `"borderBottomRight"`); border placements show one line on the editor's border. `"left"` and `"right"` place the lines in a side panel beside the transcript, shown only in fullscreen mode; the optional `widgetWidth` field is the panel's column width in cells (default 30). Hosts ignore placements they cannot render. Only string arrays are supported in RPC mode; component factories are ignored.
 
 ### setTitle
 

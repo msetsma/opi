@@ -287,7 +287,11 @@ export type RpcExtensionUIRequest =
 				| "borderTopLeft"
 				| "borderTopRight"
 				| "borderBottomLeft"
-				| "borderBottomRight";
+				| "borderBottomRight"
+				| "left"
+				| "right";
+			/** Side panel column width for `left`/`right` placements. */
+			widgetWidth?: number;
 	  }
 	| { type: "extension_ui_request"; id: string; method: "setTitle"; title: string }
 	| { type: "extension_ui_request"; id: string; method: "set_editor_text"; text: string };

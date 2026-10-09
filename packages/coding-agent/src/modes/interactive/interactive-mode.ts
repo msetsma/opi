@@ -135,7 +135,7 @@ import { loadAllHighlightLanguages } from "../../utils/syntax-highlight.ts";
 import { ensureTool, type ToolStatus } from "../../utils/tools-manager.ts";
 import { checkForNewPiVersion, type LatestPiRelease } from "../../utils/version-check.ts";
 import { reportBug } from "./bug-report.ts";
-import { createChatViewport } from "./chat-viewport.ts";
+import { type ChatViewport, type ChatViewportPanel, createChatViewport } from "./chat-viewport.ts";
 import { ArminComponent } from "./components/armin.ts";
 import { AssistantMessageComponent } from "./components/assistant-message.ts";
 import { BashExecutionComponent } from "./components/bash-execution.ts";
@@ -265,6 +265,8 @@ interface ExtensionWidget {
 	component: Component & { dispose?(): void };
 	/** One-line rendering used by border placements. */
 	borderContent: EditorBorderContent;
+	/** Panel column width for left/right placements. */
+	width: number | undefined;
 }
 
 function isExpandable(obj: unknown): obj is Expandable {
@@ -497,6 +499,7 @@ export class InteractiveMode {
 	private documentContainer: Container;
 	private transcriptScrollView: TuiLayouts.ScrollView | undefined;
 	private fullscreenLayoutRoot: Component | undefined;
+	private chatViewport: ChatViewport | undefined;
 	private pendingMessagesContainer: Container;
 	private statusContainer: Container;
 	private defaultEditor: CustomEditor;
@@ -1016,6 +1019,7 @@ export class InteractiveMode {
 			scrollbarTrackStyle: (text) => theme.fg("scrollbarTrack", text),
 			scrollbarThumbStyle: (text) => theme.fg("scrollbarThumb", text),
 		});
+		this.chatViewport = viewport;
 		this.transcriptScrollView = viewport.transcript;
 		this.fullscreenLayoutRoot = viewport.root;
 		this.mountInteractiveTui(this.renderer, [
@@ -2473,7 +2477,7 @@ export class InteractiveMode {
 			};
 		}
 
-		this.extensionWidgets.set(key, { placement, component, borderContent });
+		this.extensionWidgets.set(key, { placement, component, borderContent, width: options?.width });
 		this.renderWidgets();
 	}
 
@@ -2523,7 +2527,7 @@ export class InteractiveMode {
 	private static readonly MAX_WIDGET_LINES = 10;
 
 	/**
-	 * Route all extension widgets to the widget containers and editor border slots.
+	 * Route all extension widgets to the widget containers, editor border slots, and fullscreen side panels.
 	 */
 	private renderWidgets(): void {
 		if (!this.widgetContainerAbove || !this.widgetContainerBelow) return;
@@ -2533,6 +2537,8 @@ export class InteractiveMode {
 
 		const above: Component[] = [];
 		const below: Component[] = [];
+		const left: ChatViewportPanel[] = [];
+		const right: ChatViewportPanel[] = [];
 		for (const [key, widget] of this.extensionWidgets) {
 			const slot = borderSlotOf(widget.placement);
 			if (slot !== undefined && isBorderContentEditor(this.editor)) {
@@ -2540,12 +2546,32 @@ export class InteractiveMode {
 				continue;
 			}
 			// Editors without border slots show border widgets beside the editor on the same edge.
-			const target =
-				widget.placement === "belowEditor" || slot === "bottomLeft" || slot === "bottomRight" ? below : above;
-			target.push(widget.component);
+			switch (widget.placement) {
+				case "aboveEditor":
+				case "borderTopLeft":
+				case "borderTopRight":
+					above.push(widget.component);
+					break;
+				case "belowEditor":
+				case "borderBottomLeft":
+				case "borderBottomRight":
+					below.push(widget.component);
+					break;
+				// Side panels exist only in the fullscreen layout root; regular mode never shows them.
+				case "left":
+					left.push({ component: widget.component, width: widget.width });
+					break;
+				case "right":
+					right.push({ component: widget.component, width: widget.width });
+					break;
+				default:
+					// Placements unknown to this version render nowhere.
+					widget.placement satisfies never;
+			}
 		}
 		this.renderWidgetContainer(this.widgetContainerAbove, above, true, true);
 		this.renderWidgetContainer(this.widgetContainerBelow, below, false, false);
+		this.chatViewport?.setPanels(left, right);
 		this.ui.requestRender();
 	}
 

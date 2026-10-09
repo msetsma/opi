@@ -9,5 +9,7 @@ export default function widgetPlacementExtension(pi: ExtensionAPI) {
 		ctx.ui.setWidget("widget-border-tr", ["top-right"], { placement: "borderTopRight" });
 		ctx.ui.setWidget("widget-border-bl", ["bottom-left"], { placement: "borderBottomLeft" });
 		ctx.ui.setWidget("widget-border-br", ["bottom-right"], { placement: "borderBottomRight" });
+		// Side panels render beside the transcript in fullscreen mode only.
+		ctx.ui.setWidget("widget-right", ["Right panel", "Fullscreen only"], { placement: "right", width: 24 });
 	});
 }

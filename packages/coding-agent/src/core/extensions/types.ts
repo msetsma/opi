@@ -122,7 +122,9 @@ export interface ExtensionUIDialogOptions {
  * Placement for extension widgets. The `border*` placements render on the
  * editor's border lines, where the built-in working indicator shows, and hold
  * one line: the first line of `string[]` content, or the first line a component
- * renders.
+ * renders. The `left`/`right` placements render as side panels beside the
+ * transcript in fullscreen mode only, and hide while the terminal is narrower
+ * than the total panel width plus 40 columns.
  */
 export type WidgetPlacement =
 	| "aboveEditor"
@@ -130,12 +132,16 @@ export type WidgetPlacement =
 	| "borderTopLeft"
 	| "borderTopRight"
 	| "borderBottomLeft"
-	| "borderBottomRight";
+	| "borderBottomRight"
+	| "left"
+	| "right";
 
 /** Options for extension widgets. */
 export interface ExtensionWidgetOptions {
 	/** Where the widget is rendered. Defaults to "aboveEditor". */
 	placement?: WidgetPlacement;
+	/** `left`/`right` placements only: column width in cells. Default 30. Fullscreen only. */
+	width?: number;
 }
 
 /** Raw terminal input listener for extensions. */
@@ -195,7 +201,7 @@ export interface ExtensionUIContext {
 	/** Set the label shown for hidden thinking blocks. Call with no argument to restore default. */
 	setHiddenThinkingLabel(label?: string): void;
 
-	/** Set a widget above or below the editor, or on one of its border lines (see `WidgetPlacement`). Accepts string array or component factory. A component on a border line receives mouse events on its own columns of the line, with coordinates local to its content. */
+	/** Set a widget above or below the editor, on one of its border lines, or in a fullscreen side panel (see `WidgetPlacement`). Accepts string array or component factory. A component on a border line receives mouse events on its own columns of the line, with coordinates local to its content. */
 	setWidget(key: string, content: string[] | undefined, options?: ExtensionWidgetOptions): void;
 	setWidget(
 		key: string,

@@ -11,6 +11,7 @@ Start with `ctx.ui` methods from an [extension](extensions.md#interact-with-the-
 | Select, confirm, input, or multi-line editor | `ctx.ui.select()`, `confirm()`, `input()`, or `editor()` |
 | Non-blocking feedback | `ctx.ui.notify()` or `setStatus()` |
 | Persistent content near the editor or on its border | `ctx.ui.setWidget()` |
+| Persistent side panel beside the transcript (fullscreen) | `ctx.ui.setWidget()` with `placement: "left"` or `"right"` |
 | Replace the header, footer, or editor | The corresponding `ctx.ui` component factory |
 | Temporary interactive screen or overlay | `ctx.ui.custom()` |
 | Custom rendering for a tool or session entry | An extension renderer |
@@ -60,6 +61,20 @@ Fullscreen mode routes normalized mouse events to components. A handler can mark
 Unhandled wheel events scroll the nearest `ScrollView`. Unhandled primary-button drags remain available for transcript selection. OSC 8 links take precedence over enclosing click regions.
 
 Regular mode leaves mouse input to the terminal because the terminal owns scrollback. Design every interaction with a keyboard path even when fullscreen mouse input is available.
+
+## Add side panels
+
+`ctx.ui.setWidget(key, content, { placement: "left" | "right", width })` shows a column beside the transcript. `width` is the column width in cells and defaults to 30. Call `setWidget(key, undefined)` to remove the panel; this disposes its component, so keep state that must survive a toggle outside the component.
+
+- Panels exist only in fullscreen mode. Regular mode does not render them anywhere.
+- All panels hide while the terminal is narrower than their total width plus 40 columns, so the transcript keeps at least 40 columns.
+- To scroll a panel independently of the transcript, return `new ScrollView(content, { overscroll: "contain" })` from the factory. Do not set `primary`; the transcript is the primary scroll view.
+
+Known limits:
+
+- A right panel loses its text on rows that hold a Kitty image anchor.
+- Drag-selecting inside a panel that is not a `ScrollView` falls back to full-row screen selection.
+- The "Copied!" flash covers the top of a right panel.
 
 ## Use custom screens and overlays
 
@@ -119,7 +134,7 @@ The checked extension examples cover the main patterns:
 - [`qna.ts`](../examples/extensions/qna.ts) uses cancellable asynchronous UI.
 - [`modal-editor.ts`](../examples/extensions/modal-editor.ts) replaces the editor.
 - [`custom-footer.ts`](../examples/extensions/custom-footer.ts) replaces the footer.
-- [`widget-placement.ts`](../examples/extensions/widget-placement.ts) places persistent content above, below, and on the borders of the editor.
+- [`widget-placement.ts`](../examples/extensions/widget-placement.ts) places persistent content above, below, and on the borders of the editor, and in a right side panel.
 - [`doom-overlay/`](../examples/extensions/doom-overlay/) demonstrates a continuously rendered overlay.
 
 The public exports are defined in [`packages/tui/src/index.ts`](https://github.com/earendil-works/pi/blob/main/packages/tui/src/index.ts). See [Extensions](extensions.md) for extension lifecycle, state, tools, events, and mode behavior.
