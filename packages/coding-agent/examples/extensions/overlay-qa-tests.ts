@@ -17,11 +17,29 @@
  *   /overlay-passive    - Non-capturing overlay demo (passive info panel alongside active overlay)
  *   /overlay-focus      - Focus cycling, input routing, dismissal, and rendering order with overlays
  *   /overlay-streaming  - Multiple input panels with simulated streaming (Tab to cycle focus)
+ *   /overlay-border     - Frame border, title, padding, and clipping at an exact height
+ *   /overlay-scroll     - Frame with a scrollable body (wheel scrolls the frame, not the transcript)
  */
 
 import type { ExtensionAPI, ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
-import type { Component, OverlayAnchor, OverlayHandle, OverlayOptions, TUI } from "@earendil-works/pi-tui";
-import { Input, matchesKey, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import type {
+	Component,
+	FrameOptions,
+	OverlayAnchor,
+	OverlayHandle,
+	OverlayOptions,
+	TUI,
+} from "@earendil-works/pi-tui";
+import {
+	Frame,
+	Input,
+	matchesKey,
+	ScrollView,
+	Text,
+	truncateToWidth,
+	VStack,
+	visibleWidth,
+} from "@earendil-works/pi-tui";
 import { spawn } from "child_process";
 
 // Global handle for toggle demo (in real code, use a more elegant pattern)
@@ -295,6 +313,83 @@ export default function (pi: ExtensionAPI) {
 			});
 		},
 	});
+
+	// Frame: exact height, padding, clipping, title, and border style
+	pi.registerCommand("overlay-border", {
+		description: "Test Frame border, title, padding, and clipping",
+		handler: async (_args: string, ctx: ExtensionCommandContext) => {
+			await ctx.ui.custom<void>(
+				(tui, theme, keybindings, done) => {
+					const lines = [
+						theme.fg("accent", "Frame renders exactly 8 rows."),
+						"Content past the inner height",
+						"is clipped above the border:",
+						...Array.from({ length: 10 }, (_, index) => theme.fg("dim", `  extra line ${index + 1}`)),
+					];
+					return new KeyFrame(
+						new Text(lines.join("\n"), 1, 0),
+						{
+							height: () => Math.min(8, tui.terminal.rows),
+							title: "Border Test (Esc closes)",
+							style: (text) => theme.fg("accent", text),
+						},
+						() => tui.requestRender(),
+						(data) => {
+							if (keybindings.matches(data, "tui.select.cancel")) done();
+						},
+					);
+				},
+				{ overlay: true, overlayOptions: { anchor: "top-right", width: 40, margin: 1 } },
+			);
+		},
+	});
+
+	// Frame with a ScrollView body: wheel and arrow keys scroll inside the frame
+	pi.registerCommand("overlay-scroll", {
+		description: "Test a Frame with a scrollable body (wheel and up/down)",
+		handler: async (_args: string, ctx: ExtensionCommandContext) => {
+			await ctx.ui.custom<void>(
+				(tui, theme, keybindings, done) => {
+					const body = new ScrollView(
+						new Text(Array.from({ length: 100 }, (_, index) => `Line ${index + 1} of 100`).join("\n"), 1, 0),
+						{ scrollbar: "always", overscroll: "contain" },
+					);
+					return new KeyFrame(
+						new VStack([
+							{ component: body, basis: 0, grow: 1 },
+							new Text(theme.fg("dim", "↑↓/wheel scroll | Esc close"), 1, 0),
+						]),
+						{
+							height: () => Math.min(20, tui.terminal.rows - 2),
+							title: "Scroll Test",
+							style: (text) => theme.fg("border", text),
+						},
+						() => tui.requestRender(),
+						(data) => {
+							if (keybindings.matches(data, "tui.select.cancel")) done();
+							else if (keybindings.matches(data, "tui.select.up")) body.scrollBy(-1);
+							else if (keybindings.matches(data, "tui.select.down")) body.scrollBy(1);
+						},
+					);
+				},
+				{ overlay: true, overlayOptions: { anchor: "center", width: 50 } },
+			);
+		},
+	});
+}
+
+// Frame whose keys go to a handler instead of its child
+class KeyFrame extends Frame {
+	private readonly onKey: (data: string) => void;
+
+	constructor(child: Component, options: FrameOptions, requestRender: () => void, onKey: (data: string) => void) {
+		super(child, options, requestRender);
+		this.onKey = onKey;
+	}
+
+	override handleInput(data: string): void {
+		this.onKey(data);
+	}
 }
 
 function sleep(ms: number): Promise<void> {

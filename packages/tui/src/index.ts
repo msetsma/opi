@@ -40,6 +40,7 @@ export {
 export { Box } from "./components/box.ts";
 export { CancellableLoader } from "./components/cancellable-loader.ts";
 export { Editor, type EditorOptions, type EditorTheme } from "./components/editor.ts";
+export { Frame, type FrameOptions } from "./components/frame.ts";
 export { HStack } from "./components/h-stack.ts";
 export {
 	Image,
