@@ -29,11 +29,11 @@ This is a personal fork of [earendil-works/pi](https://github.com/earendil-works
 
 ## Companion extensions
 
-Policy lives in extensions, in separate repos, and the core only gets small generic hooks. These repos are not published yet.
+Policy lives in extensions, in separate repos, and the core only gets small generic hooks.
 
-- pi-statusline: header, winbar and statusline. Needs the border widget slots.
-- pi-outline: an outline side panel. Needs the left and right placements.
-- pi-leader: leader key sequences, a which-key popup and `/keys`. Nvim-style modes are planned.
+- [pi-statusline](https://github.com/msetsma/pi-statusline): header, winbar and statusline. Needs the border widget slots.
+- [pi-outline](https://github.com/msetsma/pi-outline): an outline side panel. Needs the left and right placements.
+- [pi-leader](https://github.com/msetsma/pi-leader): leader key sequences, a which-key popup and `/keys`. Nvim-style modes are planned.
 
 ## Running the fork
 
