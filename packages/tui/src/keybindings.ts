@@ -41,6 +41,9 @@ export interface Keybindings {
 	"tui.select.pageDown": true;
 	"tui.select.confirm": true;
 	"tui.select.cancel": true;
+	// Tab bar navigation
+	"tui.tabs.next": true;
+	"tui.tabs.previous": true;
 	// Alternate-screen viewport navigation
 	"tui.altScreen.pageUp": true;
 	"tui.altScreen.pageDown": true;
@@ -156,6 +159,8 @@ export const TUI_KEYBINDINGS = {
 		defaultKeys: ["escape", "ctrl+c"],
 		description: "Cancel selection",
 	},
+	"tui.tabs.next": { defaultKeys: "tab", description: "Next tab" },
+	"tui.tabs.previous": { defaultKeys: "shift+tab", description: "Previous tab" },
 	// These intentionally shadow the unmodified editor bindings in fullscreen mode.
 	"tui.altScreen.pageUp": {
 		defaultKeys: "pageUp",

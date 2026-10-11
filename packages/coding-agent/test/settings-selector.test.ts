@@ -1,4 +1,9 @@
-import { setKeybindings } from "@earendil-works/pi-tui";
+import {
+	resetCapabilitiesCache,
+	type SettingsList,
+	setCapabilityOverrides,
+	setKeybindings,
+} from "@earendil-works/pi-tui";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KeybindingsManager } from "../src/core/keybindings.ts";
 import {
@@ -20,6 +25,140 @@ describe("SettingsSelectorComponent", () => {
 	afterEach(() => {
 		harness?.cleanup();
 		harness = undefined;
+		setCapabilityOverrides({});
+		resetCapabilitiesCache();
+	});
+
+	describe("tabs", () => {
+		const config = {
+			autoCompact: true,
+			defaultModel: "not set",
+			availableDefaultModels: [],
+			showImages: true,
+			imageWidthCells: 80,
+			autoResizeImages: true,
+			blockImages: false,
+			enableSkillCommands: true,
+			steeringMode: "all",
+			followUpMode: "all",
+			transport: "sse",
+			httpIdleTimeoutMs: 300000,
+			cacheWarmingMode: "off",
+			thinkingLevel: "medium",
+			availableThinkingLevels: [],
+			modelThinkingLevels: {},
+			currentTheme: "dark",
+			terminalTheme: "dark",
+			availableThemes: ["dark"],
+			hideThinkingBlock: false,
+			mermaidRenderingMode: "final",
+			showCacheMissNotices: false,
+			collapseChangelog: false,
+			enableInstallTelemetry: true,
+			doubleEscapeAction: "tree",
+			treeFilterMode: "default",
+			showHardwareCursor: false,
+			editorPaddingX: 0,
+			outputPad: 1,
+			autocompleteMaxVisible: 5,
+			quietStartup: false,
+			defaultProjectTrust: "ask",
+			clearOnShrink: false,
+			showTerminalProgress: false,
+			tuiMode: "fullscreen",
+			fullscreenExitOutput: "transcript",
+			fullscreenScrollbar: "auto",
+			fullscreenCopyOnSelect: true,
+			fullscreenWheelScrollLines: "auto",
+			warnings: {},
+		} as unknown as SettingsConfig;
+		const callbacks = { onCancel: () => {} } as unknown as SettingsCallbacks;
+
+		const selectedLabel = (list: SettingsList) => stripAnsi(list.render(120).join("\n")).match(/^→ (.*?) {2,}/m)?.[1];
+
+		/** Walk every tab and every row with the keyboard, returning tab -> row labels. */
+		const collectTabs = (images: boolean) => {
+			setCapabilityOverrides({ images: images ? "kitty" : null });
+			const list = new SettingsSelectorComponent(config, callbacks).getSettingsList();
+			const tabs: string[][] = [];
+			for (let tab = 0; tab < 5; tab++) {
+				const labels: string[] = [];
+				for (let label = selectedLabel(list); label && !labels.includes(label); label = selectedLabel(list)) {
+					labels.push(label);
+					list.handleInput("\x1b[B");
+				}
+				tabs.push(labels);
+				list.handleInput("\t");
+			}
+			return tabs;
+		};
+
+		const general = [
+			"Auto-compact",
+			"Steering mode",
+			"Follow-up mode",
+			"Double-escape action",
+			"Tree filter mode",
+			"Default project trust",
+			"Default thinking level per model",
+			"Warnings",
+		];
+		const display = [
+			"Theme",
+			"Hide thinking",
+			"Mermaid diagrams",
+			"Cache miss notices",
+			"Collapse changelog",
+			"Quiet startup",
+			"Editor padding",
+			"Output padding",
+			"Autocomplete max items",
+			"Show hardware cursor",
+			"Clear on shrink",
+			"Terminal progress",
+		];
+		const fullscreen = [
+			"TUI mode",
+			"Fullscreen exit output",
+			"Fullscreen scrollbar",
+			"Fullscreen copy on select",
+			"Fullscreen wheel scrolling",
+		];
+		const advanced = ["Transport", "HTTP idle timeout", "Cache warming", "Skill commands", "Install telemetry"];
+
+		it("lists every setting in exactly one tab", () => {
+			const tabs = collectTabs(true);
+			expect(tabs).toEqual([
+				general,
+				display,
+				fullscreen,
+				["Show images", "Image width", "Auto-resize images", "Block images"],
+				advanced,
+			]);
+			// Guards against dropped or duplicated rows: all 34 settings rows from the former flat list.
+			const all = tabs.flat();
+			expect(all).toHaveLength(34);
+			expect(new Set(all).size).toBe(all.length);
+		});
+
+		it("hides inline image rows when the terminal cannot show images", () => {
+			expect(collectTabs(false)).toEqual([
+				general,
+				display,
+				fullscreen,
+				["Auto-resize images", "Block images"],
+				advanced,
+			]);
+		});
+
+		it("shows the tab bar and switches tabs", () => {
+			const list = new SettingsSelectorComponent(config, callbacks).getSettingsList();
+			expect(stripAnsi(list.render(120)[0] ?? "")).toBe("  General │ Display │ Fullscreen │ Images │ Advanced");
+			expect(selectedLabel(list)).toBe("Auto-compact");
+			list.handleInput("\x1b[Z");
+			expect(selectedLabel(list)).toBe("Transport");
+			expect(stripAnsi(list.render(120).join("\n"))).not.toContain("Auto-compact");
+		});
 	});
 
 	it("cycles through fullscreen settings", () => {
