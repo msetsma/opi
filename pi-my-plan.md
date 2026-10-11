@@ -270,7 +270,7 @@ Size: about 60 source lines.
 
 ## Risks
 
-- **Upstream churn.** Keep fork-only logic in new files with a few lines of wiring in IM. Rebase `my` weekly, with `rerere` enabled.
+- **Upstream churn.** Keep fork-only logic in new files with a few lines of wiring in IM. Merge `main` into `my` weekly, with `rerere` enabled. `my` is pushed, so it is never rebased.
 - **#10602 changes upstream.** Re-cherry-pick the final version. M2 and the M1 statusline depend on its shape.
 - **Lockfile.** Don't add workspace packages or deps on fork branches. `scripts/check-lockfile-commit.mjs` blocks it, and it conflicts on every sync.
 - **`npm run check` rewrites files** (`biome --write`). Run it on a clean or staged tree.
@@ -290,4 +290,4 @@ Size: about 60 source lines.
 3. Run it in tmux: `tmux new-session -d -s pi-test -x 160 -y 40 -c /tmp`, then `pim -e <example>`, `tmux capture-pane -p` (add `-e` for colors), and `tmux resize-window -x 100` for width-gated behavior.
 4. Run `npm run check` and fix every error, warning and info.
 5. Commit explicit paths with the format `feat(tui,coding-agent): message`. Don't touch `CHANGELOG.md`.
-6. Rebase onto `main`, then merge or cherry-pick into `my`.
+6. Rebase the feature branch onto `main`, then merge or cherry-pick it into `my`.
