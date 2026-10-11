@@ -13,6 +13,8 @@ export interface SettingItem {
 	description?: string;
 	/** Current value to display (right side) */
 	currentValue: string;
+	/** Tab this item is listed under. Tabs appear in the order their names first occur; items without one go under the first tab. */
+	tab?: string;
 	/** If provided, Enter/Space cycles through these values */
 	values?: string[];
 	/** If provided, Enter opens this submenu. Receives current value and done callback.
@@ -29,6 +31,8 @@ export interface SettingsListTheme {
 	description: (text: string) => string;
 	cursor: string;
 	hint: (text: string) => string;
+	/** Tab bar label style. Falls back to `label`. */
+	tab?: (text: string, active: boolean) => string;
 }
 
 export interface SettingsListOptions {
@@ -46,6 +50,8 @@ export class SettingsList implements Component {
 	private onCancel: () => void;
 	private searchInput?: Input;
 	private searchEnabled: boolean;
+	private tabs: string[];
+	private activeTab = 0;
 
 	// Submenu state
 	private submenuComponent: Component | null = null;
@@ -61,7 +67,6 @@ export class SettingsList implements Component {
 		options: SettingsListOptions = {},
 	) {
 		this.items = items;
-		this.filteredItems = items;
 		this.maxVisible = maxVisible;
 		this.theme = theme;
 		this.onChange = onChange;
@@ -70,6 +75,9 @@ export class SettingsList implements Component {
 		if (this.searchEnabled) {
 			this.searchInput = new Input();
 		}
+		this.tabs = [...new Set(items.flatMap((item) => (item.tab ? [item.tab] : [])))];
+		this.filteredItems = items;
+		this.applyFilter("");
 	}
 
 	/** Update an item's currentValue */
@@ -80,10 +88,13 @@ export class SettingsList implements Component {
 		}
 	}
 
-	/** Move selection to the item with the given id (no-op if not found). */
+	/** Move selection to the item with the given id, switching to its tab if needed (no-op if not found). */
 	selectItem(id: string): void {
-		const items = this.searchEnabled ? this.filteredItems : this.items;
-		const index = items.findIndex((i) => i.id === id);
+		const tabIndex = this.tabs.indexOf(this.items.find((i) => i.id === id)?.tab ?? this.tabs[0] ?? "");
+		if (tabIndex !== -1 && !this.filteredItems.some((i) => i.id === id)) {
+			this.switchTab(tabIndex);
+		}
+		const index = this.filteredItems.findIndex((i) => i.id === id);
 		if (index !== -1) {
 			this.selectedIndex = index;
 		}
@@ -104,6 +115,10 @@ export class SettingsList implements Component {
 
 	private renderMainList(width: number): string[] {
 		const lines: string[] = [];
+
+		if (this.tabs.length > 0) {
+			lines.push(this.renderTabBar(width), "");
+		}
 
 		if (this.searchEnabled && this.searchInput) {
 			lines.push(...this.searchInput.render(width));
@@ -182,12 +197,14 @@ export class SettingsList implements Component {
 			return result ? { ...result, focus: true } : undefined;
 		}
 
+		const tabRows = this.tabs.length > 0 ? 2 : 0;
+		if (event.y < tabRows) return undefined;
 		if (this.searchEnabled && this.searchInput) {
-			if (event.y === 0) {
+			if (event.y === tabRows) {
 				const result = this.searchInput.handleMouse?.(event);
 				return result ? { ...result, focus: true } : undefined;
 			}
-			if (event.y === 1) return undefined;
+			if (event.y === tabRows + 1) return undefined;
 		}
 
 		const displayItems = this.getDisplayItems();
@@ -201,7 +218,7 @@ export class SettingsList implements Component {
 		// Hover must not change selection: the visible range is centered on it.
 		if (event.button !== "left" || (event.type !== "press" && event.type !== "click")) return undefined;
 
-		const rowOffset = this.searchEnabled ? 2 : 0;
+		const rowOffset = tabRows + (this.searchEnabled ? 2 : 0);
 		const { startIndex, endIndex } = this.getVisibleRange(displayItems);
 		const itemIndex = startIndex + event.y - rowOffset;
 		if (itemIndex < startIndex || itemIndex >= endIndex) return undefined;
@@ -236,6 +253,10 @@ export class SettingsList implements Component {
 		} else if (kb.matches(data, "tui.select.down")) {
 			if (displayItems.length === 0) return;
 			this.selectedIndex = this.selectedIndex === displayItems.length - 1 ? 0 : this.selectedIndex + 1;
+		} else if (this.tabs.length > 0 && kb.matches(data, "tui.tabs.next")) {
+			this.switchTab(this.activeTab + 1);
+		} else if (this.tabs.length > 0 && kb.matches(data, "tui.tabs.previous")) {
+			this.switchTab(this.activeTab - 1);
 		} else if (
 			kb.matches(data, "tui.select.confirm") ||
 			(data === " " && (!this.searchEnabled || this.searchInput?.getValue().length === 0))
@@ -250,7 +271,32 @@ export class SettingsList implements Component {
 	}
 
 	private getDisplayItems(): SettingItem[] {
-		return this.searchEnabled ? this.filteredItems : this.items;
+		return this.filteredItems;
+	}
+
+	/** Switch to a tab (wrapping around) and clear the search query. */
+	private switchTab(index: number): void {
+		this.activeTab = (index + this.tabs.length) % this.tabs.length;
+		this.searchInput?.setValue("");
+		this.applyFilter("");
+	}
+
+	private renderTabBar(width: number): string {
+		const searching = (this.searchInput?.getValue().trim() ?? "") !== "";
+		const labels = this.tabs.map((label, i) => {
+			const active = !searching && i === this.activeTab;
+			return this.theme.tab?.(label, active) ?? this.theme.label(label, active);
+		});
+		const separator = this.theme.hint(" │ ");
+		// Drop leading tabs until the active one fits on narrow terminals.
+		let start = 0;
+		while (
+			start < this.activeTab &&
+			visibleWidth(`  ${labels.slice(start, this.activeTab + 1).join(separator)}`) > width
+		) {
+			start++;
+		}
+		return truncateToWidth((start > 0 ? this.theme.hint("… ") : "  ") + labels.slice(start).join(separator), width);
 	}
 
 	private getVisibleRange(displayItems: readonly SettingItem[]): { startIndex: number; endIndex: number } {
@@ -308,21 +354,29 @@ export class SettingsList implements Component {
 	}
 
 	private applyFilter(query: string): void {
-		this.filteredItems = fuzzyFilter(this.items, query, (item) => item.label);
+		const tab = this.tabs[this.activeTab];
+		this.filteredItems =
+			tab === undefined || query.trim()
+				? fuzzyFilter(this.items, query, (item) => item.label)
+				: this.items.filter((item) => (item.tab ?? this.tabs[0]) === tab);
 		this.selectedIndex = 0;
 	}
 
 	private addHintLine(lines: string[], width: number): void {
+		const kb = getKeybindings();
+		const tabKeys = [kb.getKeys("tui.tabs.next")[0], kb.getKeys("tui.tabs.previous")[0]]
+			.filter((key) => key !== undefined)
+			.map((key) =>
+				key
+					.split("+")
+					.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+					.join("+"),
+			);
+		const tabsHint = this.tabs.length > 0 && tabKeys.length > 0 ? `${tabKeys.join("/")} tabs · ` : "";
+		const searchHint = this.searchEnabled ? "Type to search · " : "";
 		lines.push("");
 		lines.push(
-			truncateToWidth(
-				this.theme.hint(
-					this.searchEnabled
-						? "  Type to search · Enter/Space to change · Esc to cancel"
-						: "  Enter/Space to change · Esc to cancel",
-				),
-				width,
-			),
+			truncateToWidth(this.theme.hint(`  ${tabsHint}${searchHint}Enter/Space to change · Esc to cancel`), width),
 		);
 	}
 }

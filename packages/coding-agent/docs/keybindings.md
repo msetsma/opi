@@ -94,6 +94,8 @@ The dedicated history actions browse prompt history regardless of cursor positio
 | `tui.select.pageDown` | `pageDown` | Page down in list |
 | `tui.select.confirm` | `enter` | Confirm selection |
 | `tui.select.cancel` | `escape`, `ctrl+c` | Cancel selection |
+| `tui.tabs.next` | `tab` | Switch to the next tab, such as a `/settings` category |
+| `tui.tabs.previous` | `shift+tab` | Switch to the previous tab |
 
 #### Fullscreen
 

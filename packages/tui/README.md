@@ -618,6 +618,7 @@ interface SettingItem {
   description?: string;
   currentValue: string;
   values?: string[];  // If provided, Enter/Space cycles through these
+  tab?: string;       // Tab this item is listed under
   submenu?: (currentValue: string, done: (selectedValue?: string) => void) => Component;
 }
 
@@ -627,6 +628,7 @@ interface SettingsListTheme {
   description: (text: string) => string;
   cursor: string;
   hint: (text: string) => string;
+  tab?: (text: string, active: boolean) => string;  // Tab bar label; defaults to label
 }
 
 const settings = new SettingsList(
@@ -637,15 +639,19 @@ const settings = new SettingsList(
   10,      // maxVisible
   theme,   // SettingsListTheme
   (id, newValue) => console.log(`${id} changed to ${newValue}`),
-  () => console.log("Cancelled")
+  () => console.log("Cancelled"),
+  { enableSearch: true }  // optional
 );
 settings.updateValue("theme", "light");
 ```
+
+If any item has a `tab`, a tab bar is rendered above the list and only the active tab's items are shown. Tabs appear in the order their names first occur in `items`; items without a `tab` go under the first tab. A search query matches items in all tabs; switching tabs clears it. `selectItem(id)` switches to the item's tab.
 
 **Controls:**
 - Mouse move/wheel: Highlight rows in alternate-screen mode
 - Click: Activate a row
 - Arrow keys: Navigate
+- Tab/Shift+Tab: Next/previous tab (`tui.tabs.next`, `tui.tabs.previous`), wrapping around
 - Enter/Space: Activate (cycle value or open submenu)
 - Escape: Cancel
 
