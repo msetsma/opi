@@ -118,6 +118,8 @@ See [Themes](themes.md) and [Terminal Setup](terminal-setup.md) for format and p
 
 `glyphs` sets the characters used for borders, rules, scrollbars, selection cursors, and session trees. They live in settings rather than in themes, so they stay the same when the theme switches between light and dark.
 
+The **Glyphs** row in the Display tab of `/settings` switches `glyphs.preset` and applies it immediately. It writes only the preset; per-glyph overrides are set in `settings.json` and are kept.
+
 ```json
 { "glyphs": { "preset": "ascii", "cursor": "❯ " } }
 ```

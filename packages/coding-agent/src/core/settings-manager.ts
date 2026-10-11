@@ -20,6 +20,7 @@ import type {
 	CompactionModelOverride,
 	DefaultProjectTrust,
 	FullscreenExitOutput,
+	GlyphPreset,
 	Glyphs,
 	MermaidRenderingMode,
 	PackageSource,
@@ -1422,6 +1423,18 @@ export class SettingsManager {
 		this.globalSettings.markdown ??= {};
 		this.globalSettings.markdown.mermaid = mode;
 		this.markModified("markdown", "mermaid");
+		this.save();
+	}
+
+	getGlyphPreset(): GlyphPreset {
+		return this.settings.glyphs?.preset === "ascii" ? "ascii" : SETTINGS_DEFAULTS.glyphs.preset;
+	}
+
+	/** Writes only `glyphs.preset`; per-glyph overrides stay as they are. */
+	setGlyphPreset(preset: GlyphPreset): void {
+		this.globalSettings.glyphs ??= {};
+		this.globalSettings.glyphs.preset = preset;
+		this.markModified("glyphs", "preset");
 		this.save();
 	}
 

@@ -613,6 +613,23 @@ describe("SettingsManager", () => {
 			expect(glyphs.cursor).toBe("❯");
 			expect(glyphs.rule).toBe("-");
 		});
+
+		it("setGlyphPreset writes only the preset and keeps per-glyph overrides", async () => {
+			const settingsPath = join(agentDir, "settings.json");
+			writeFileSync(settingsPath, JSON.stringify({ glyphs: { preset: "unicode", cursor: "❯ ", quote: "▌" } }));
+			const manager = SettingsManager.create(projectDir, agentDir);
+
+			manager.setGlyphPreset("ascii");
+			await manager.flush();
+
+			expect(JSON.parse(readFileSync(settingsPath, "utf-8")).glyphs).toEqual({
+				preset: "ascii",
+				cursor: "❯ ",
+				quote: "▌",
+			});
+			expect(manager.getGlyphPreset()).toBe("ascii");
+			expect(manager.getGlyphs().border).toBe("-");
+		});
 	});
 
 	describe("shellCommandPrefix", () => {

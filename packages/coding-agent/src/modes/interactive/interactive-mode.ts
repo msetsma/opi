@@ -2106,10 +2106,14 @@ export class InteractiveMode {
 		});
 	}
 
+	/** Runs on every /new, /resume, fork and /settings change, so only re-render when the glyphs changed. */
+	private applyGlyphSetting(): void {
+		if (setGlyphs(this.settingsManager.getGlyphs())) this.ui.invalidate();
+	}
+
 	private applyRuntimeSettings(): void {
 		setCapabilityOverrides(this.settingsManager.getTerminalCapabilityOverrides());
-		// Runs on every /new, /resume and fork, so only re-render when the glyphs changed.
-		if (setGlyphs(this.settingsManager.getGlyphs())) this.ui.invalidate();
+		this.applyGlyphSetting();
 		this.ensurePngTranscoder();
 		configureHttpDispatcher(this.settingsManager.getHttpIdleTimeoutMs());
 		this.applyFullscreenScrollbarSetting();
@@ -5033,6 +5037,7 @@ export class InteractiveMode {
 					currentTheme: this.themeController.getThemeSelection() || SYSTEM_THEME_NAME,
 					terminalTheme: this.themeController.getTerminalTheme(),
 					availableThemes: getAvailableThemes(),
+					glyphPreset: this.settingsManager.getGlyphPreset(),
 					hideThinkingBlock: this.hideThinkingBlock,
 					mermaidRenderingMode: this.settingsManager.getMermaidRenderingMode(),
 					collapseChangelog: this.settingsManager.getCollapseChangelog(),
@@ -5131,6 +5136,11 @@ export class InteractiveMode {
 						this.themeController.setThemeSetting(themeSetting);
 					},
 					onThemePreview: (themeName) => this.themeController.preview(themeName),
+					onGlyphPresetChange: (preset) => {
+						this.settingsManager.setGlyphPreset(preset);
+						this.applyGlyphSetting();
+						this.ui.requestRender();
+					},
 					onHideThinkingBlockChange: (hidden) => {
 						this.hideThinkingBlock = hidden;
 						this.settingsManager.setHideThinkingBlock(hidden);

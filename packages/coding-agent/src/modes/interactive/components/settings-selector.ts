@@ -19,6 +19,7 @@ import {
 	type CacheWarmingMode,
 	type DefaultProjectTrust,
 	type FullscreenExitOutput,
+	type GlyphPreset,
 	type MermaidRenderingMode,
 	type QuietStartup,
 	type TuiMode,
@@ -78,6 +79,7 @@ export interface SettingsConfig {
 	currentTheme: string;
 	terminalTheme: TerminalTheme;
 	availableThemes: string[];
+	glyphPreset: GlyphPreset;
 	hideThinkingBlock: boolean;
 	mermaidRenderingMode: MermaidRenderingMode;
 	showCacheMissNotices: boolean;
@@ -117,6 +119,7 @@ export interface SettingsCallbacks {
 	onModelThinkingLevelRemove: (provider: string, modelId: string) => void;
 	onThemeChange: (theme: string) => void;
 	onThemePreview?: (theme: string) => void;
+	onGlyphPresetChange: (preset: GlyphPreset) => void;
 	onHideThinkingBlockChange: (hidden: boolean) => void;
 	onMermaidRenderingModeChange: (mode: MermaidRenderingMode) => void;
 	onShowCacheMissNoticesChange: (shown: boolean) => void;
@@ -657,6 +660,15 @@ export class SettingsSelectorComponent extends Container {
 					new ThemeSubmenu(currentValue, config.terminalTheme, config.availableThemes, callbacks, done),
 			},
 			{
+				id: "glyphs",
+				tab: "Display",
+				label: "Glyphs",
+				description:
+					"Characters for borders, rules, scrollbars, cursors, and trees. Per-glyph overrides go in settings.json (docs/settings.md, Glyphs)",
+				currentValue: config.glyphPreset,
+				values: ["unicode", "ascii"],
+			},
+			{
 				id: "hide-thinking",
 				tab: "Display",
 				label: "Hide thinking",
@@ -986,6 +998,9 @@ export class SettingsSelectorComponent extends Container {
 						break;
 					case "theme":
 						callbacks.onThemeChange(newValue);
+						break;
+					case "glyphs":
+						callbacks.onGlyphPresetChange(newValue === "ascii" ? "ascii" : "unicode");
 						break;
 				}
 			},

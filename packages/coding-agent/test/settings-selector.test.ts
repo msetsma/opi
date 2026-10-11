@@ -6,6 +6,7 @@ import {
 } from "@earendil-works/pi-tui";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { KeybindingsManager } from "../src/core/keybindings.ts";
+import { SettingsManager } from "../src/core/settings-manager.ts";
 import {
 	type SettingsCallbacks,
 	type SettingsConfig,
@@ -50,6 +51,7 @@ describe("SettingsSelectorComponent", () => {
 			currentTheme: "dark",
 			terminalTheme: "dark",
 			availableThemes: ["dark"],
+			glyphPreset: "unicode",
 			hideThinkingBlock: false,
 			mermaidRenderingMode: "final",
 			showCacheMissNotices: false,
@@ -105,6 +107,7 @@ describe("SettingsSelectorComponent", () => {
 		];
 		const display = [
 			"Theme",
+			"Glyphs",
 			"Hide thinking",
 			"Mermaid diagrams",
 			"Cache miss notices",
@@ -135,9 +138,9 @@ describe("SettingsSelectorComponent", () => {
 				["Show images", "Image width", "Auto-resize images", "Block images"],
 				advanced,
 			]);
-			// Guards against dropped or duplicated rows: all 34 settings rows from the former flat list.
+			// Guards against dropped or duplicated rows: all 35 settings rows (the former flat list plus Glyphs).
 			const all = tabs.flat();
-			expect(all).toHaveLength(34);
+			expect(all).toHaveLength(35);
 			expect(new Set(all).size).toBe(all.length);
 		});
 
@@ -158,6 +161,28 @@ describe("SettingsSelectorComponent", () => {
 			list.handleInput("\x1b[Z");
 			expect(selectedLabel(list)).toBe("Transport");
 			expect(stripAnsi(list.render(120).join("\n"))).not.toContain("Auto-compact");
+		});
+
+		it("switches the glyph preset from the Display tab and keeps per-glyph overrides", () => {
+			const manager = SettingsManager.inMemory({ glyphs: { cursor: "❯ " } });
+			const glyphCallbacks = {
+				onGlyphPresetChange: manager.setGlyphPreset.bind(manager),
+			} as unknown as SettingsCallbacks;
+			const list = new SettingsSelectorComponent(
+				{ ...config, glyphPreset: manager.getGlyphPreset() },
+				glyphCallbacks,
+			).getSettingsList();
+
+			list.selectItem("glyphs");
+			const output = stripAnsi(list.render(120).join("\n"));
+			expect(output).toContain("Display");
+			expect(output).toMatch(/→ Glyphs +unicode/);
+			expect(output).toContain("Per-glyph overrides go in settings.json");
+			list.handleInput("\r");
+
+			expect(manager.getGlyphPreset()).toBe("ascii");
+			expect(manager.getGlyphs().border).toBe("-");
+			expect(manager.getGlyphs().cursor).toBe("❯ ");
 		});
 	});
 
