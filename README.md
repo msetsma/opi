@@ -1,6 +1,27 @@
 > [!NOTE]
-> Personal fork of [earendil-works/pi](https://github.com/earendil-works/pi). Fork changes are listed in [FORK.md](FORK.md).
-> Everything below this note is the upstream README, unchanged.
+> Personal fork of [earendil-works/pi](https://github.com/earendil-works/pi). `main` is upstream plus the changes below. Details, sync workflow and roadmap are in [FORK.md](FORK.md). Everything under the divider is the upstream README, unchanged.
+
+## Fork changes
+
+| Change | What it does | Branch | Upstream status |
+| --- | --- | --- | --- |
+| Editor border widgets | `setWidget` placements on the editor's border corners, with mouse input forwarded to the border content. Cherry-picked from upstream PR #10602 by Pavel Shirshov ([@pshirshov](https://github.com/pshirshov)). | `pr-10602` | upstream PR #10602 (open) |
+| Overlay close fix | An extension overlay's `done()` closes that overlay by handle instead of whatever is on top of the stack. | `feat/overlay-close-own-handle` | proposal drafted |
+| `TUI.getFocusedComponent` | Exposes `getFocusedComponent` on the `TUI` interface. | `feat/tui-get-focused-component` | not proposed yet |
+| `overlayOptions` JSDoc | Corrects the docs: a function is evaluated once, and updates work by mutating the returned object. | `docs/overlay-options-jsdoc` | not proposed yet |
+| HStack measure fix | Skips child measurement in fixed-height stretch layouts, so the transcript no longer renders twice per frame. | `fix/hstack-measure` | proposal drafted |
+| Wheel-contain fix | Wheel overscroll in an `overscroll: "contain"` scroll view no longer leaks to the transcript. | `fix/wheel-contain-leak` | proposal drafted |
+| Left and right side panels | `setWidget` placements `"left"` and `"right"` with a column width, shown beside the transcript in fullscreen mode. | `main` | not proposed yet |
+| Theme text attributes and syntax overrides | Theme tokens accept bold, dim, italic, underline and strikethrough, and a `syntax` map overrides highlight.js scope colors. | `feat/theme-text-attributes` | not proposed yet |
+| `registerShortcut` id | An optional id lets users rebind or disable extension shortcuts in `keybindings.json`. | `feat/extension-shortcut-id` | not proposed yet |
+| `Frame` component | A bordered, fixed-height floating window that routes mouse input and consumes wheel input. | `feat/tui-frame` | not proposed yet |
+| Glyphs setting | `"glyphs"` in `settings.json` picks a preset (`unicode`, `ascii`) plus per-glyph overrides for borders, markdown, scrollbar, cursors and tree connectors. | `main` | fork-only |
+| Settings category tabs | `/settings` groups rows into General, Display, Fullscreen, Images and Advanced tabs, switched with Tab and Shift+Tab. | `feat/settings-tabs` | not proposed yet |
+| Glyphs settings row | A row in `/settings` for choosing the glyphs preset. | `feat/settings-glyphs` | fork-only |
+
+Companion extensions: [pi-statusline](https://github.com/msetsma/pi-statusline), [pi-outline](https://github.com/msetsma/pi-outline), [pi-leader](https://github.com/msetsma/pi-leader).
+
+---
 
 <p align="center">
   <a href="https://pi.dev">

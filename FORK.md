@@ -4,10 +4,10 @@ This is a personal fork of [earendil-works/pi](https://github.com/earendil-works
 
 ## What this fork is
 
-- `main` mirrors upstream `main`. It only moves by fast-forward and never gets its own commits.
-- `my` is the personal integration branch. It is what runs day to day.
-- Feature branches (`feat/*`, `fix/*`, `docs/*`) are cut from `main` so each one stays a clean upstream candidate, then merged or cherry-picked into `my`.
-- Fork-only work, which upstream is not expected to take, is committed on `my` directly or on a branch that is never proposed.
+- `main` is the fork: upstream plus every change listed below. It is what runs day to day and the GitHub default branch.
+- Upstream is the `upstream` remote. Its `main` is reachable as `upstream/main`; there is no local mirror branch.
+- Feature branches (`feat/*`, `fix/*`, `docs/*`) are cut from `upstream/main` so each one stays a clean upstream candidate, then merged into `main`.
+- Fork-only work, which upstream is not expected to take, is committed on `main` directly.
 
 ## Core changes
 
@@ -19,11 +19,11 @@ This is a personal fork of [earendil-works/pi](https://github.com/earendil-works
 | `overlayOptions` JSDoc | Corrects the docs: a function is evaluated once, and updates work by mutating the returned object. | `docs/overlay-options-jsdoc` | not proposed yet |
 | HStack measure fix | Skips child measurement in fixed-height stretch layouts, so the transcript no longer renders twice per frame. | `fix/hstack-measure` | proposal drafted |
 | Wheel-contain fix | Wheel overscroll in an `overscroll: "contain"` scroll view no longer leaks to the transcript. | `fix/wheel-contain-leak` | proposal drafted |
-| Left and right side panels | `setWidget` placements `"left"` and `"right"` with a column width, shown beside the transcript in fullscreen mode. | `my` | not proposed yet |
+| Left and right side panels | `setWidget` placements `"left"` and `"right"` with a column width, shown beside the transcript in fullscreen mode. | `main` | not proposed yet |
 | Theme text attributes and syntax overrides | Theme tokens accept bold, dim, italic, underline and strikethrough, and a `syntax` map overrides highlight.js scope colors. | `feat/theme-text-attributes` | not proposed yet |
 | `registerShortcut` id | An optional id lets users rebind or disable extension shortcuts in `keybindings.json`. | `feat/extension-shortcut-id` | not proposed yet |
 | `Frame` component | A bordered, fixed-height floating window that routes mouse input and consumes wheel input. | `feat/tui-frame` | not proposed yet |
-| Glyphs setting | `"glyphs"` in `settings.json` picks a preset (`unicode`, `ascii`) plus per-glyph overrides for borders, markdown, scrollbar, cursors and tree connectors. | `my` | fork-only |
+| Glyphs setting | `"glyphs"` in `settings.json` picks a preset (`unicode`, `ascii`) plus per-glyph overrides for borders, markdown, scrollbar, cursors and tree connectors. | `main` | fork-only |
 | Settings category tabs | `/settings` groups rows into General, Display, Fullscreen, Images and Advanced tabs, switched with Tab and Shift+Tab. | `feat/settings-tabs` | not proposed yet |
 | Glyphs settings row | A row in `/settings` for choosing the glyphs preset. | `feat/settings-glyphs` | fork-only |
 
@@ -58,13 +58,12 @@ The fork reads and writes the same `~/.pi/agent` directory (settings, auth, sess
 
 ```sh
 git fetch upstream
-git switch main && git merge --ff-only upstream/main && git push origin main
-git switch my && git merge main
-git rebase main feat/<topic>   # or re-cut it from main and cherry-pick
+git switch main && git merge upstream/main
 npm run check
+git rebase upstream/main feat/<topic>   # or re-cut it and cherry-pick
 ```
 
-Merge `main` into `my` rather than rebasing `my`. Rebase or re-cut feature branches onto the new `main` so they stay PR-ready.
+Merge `upstream/main` into `main` rather than rebasing `main`. Rebase or re-cut feature branches onto `upstream/main` so they stay PR-ready.
 
 ## Plan
 
