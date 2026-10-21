@@ -64,6 +64,7 @@ describe("SettingsSelectorComponent", () => {
 			outputPad: 1,
 			autocompleteMaxVisible: 5,
 			quietStartup: false,
+			sessionShareDestination: "auto",
 			defaultProjectTrust: "ask",
 			clearOnShrink: false,
 			showTerminalProgress: false,
@@ -99,6 +100,7 @@ describe("SettingsSelectorComponent", () => {
 			"Auto-compact",
 			"Steering mode",
 			"Follow-up mode",
+			"Session share destination",
 			"Double-escape action",
 			"Tree filter mode",
 			"Default project trust",
@@ -138,9 +140,9 @@ describe("SettingsSelectorComponent", () => {
 				["Show images", "Image width", "Auto-resize images", "Block images"],
 				advanced,
 			]);
-			// Guards against dropped or duplicated rows: all 35 settings rows (the former flat list plus Glyphs).
+			// Guards against dropped or duplicated rows: all 36 settings rows (the former flat list plus Glyphs).
 			const all = tabs.flat();
-			expect(all).toHaveLength(35);
+			expect(all).toHaveLength(36);
 			expect(new Set(all).size).toBe(all.length);
 		});
 

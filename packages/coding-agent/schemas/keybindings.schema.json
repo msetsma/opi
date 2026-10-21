@@ -139,6 +139,14 @@
       "$ref": "#/$defs/KeybindingValue",
       "description": "Cancel selection"
     },
+    "tui.tabs.next": {
+      "$ref": "#/$defs/KeybindingValue",
+      "description": "Next tab"
+    },
+    "tui.tabs.previous": {
+      "$ref": "#/$defs/KeybindingValue",
+      "description": "Previous tab"
+    },
     "tui.altScreen.pageUp": {
       "$ref": "#/$defs/KeybindingValue",
       "description": "Scroll viewport up one page"
