@@ -7,7 +7,6 @@
 
 Small fixes with no new API, written as upstream proposals.
 
-- **Overlay close.** An extension overlay's `done()` closes that overlay, not whatever is on top of the stack.
 - **HStack double render.** Fixed-height stretch layouts skip child measurement, so the transcript renders once per frame.
 - **Wheel leak.** Wheel overscroll in a `contain` scroll view no longer scrolls the transcript.
 

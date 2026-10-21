@@ -16,7 +16,7 @@ The README groups the changes by kind. [DECISIONS.md](DECISIONS.md) explains why
 | Change | What it does | Branch | Upstream status |
 | --- | --- | --- | --- |
 | Editor border widgets | `setWidget` placements on the editor's border corners, with mouse input forwarded to the border content. Cherry-picked from upstream PR #10602 by Pavel Shirshov ([@pshirshov](https://github.com/pshirshov)). | `pr-10602` | upstream PR #10602 (open) |
-| Overlay close fix | An extension overlay's `done()` closes that overlay by handle instead of whatever is on top of the stack. | `feat/overlay-close-own-handle` | proposal drafted |
+| Overlay close fix | Landed upstream as #10648 (v1.3.0); the fork dropped its own version in the merge. | n/a | merged upstream |
 | `TUI.getFocusedComponent` | Exposes `getFocusedComponent` on the `TUI` interface. | `feat/tui-get-focused-component` | not proposed yet |
 | `overlayOptions` JSDoc | Corrects the docs: a function is evaluated once, and updates work by mutating the returned object. | `docs/overlay-options-jsdoc` | not proposed yet |
 | HStack measure fix | Skips child measurement in fixed-height stretch layouts, so the transcript no longer renders twice per frame. | `fix/hstack-measure` | proposal drafted |

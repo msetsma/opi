@@ -4,8 +4,6 @@ Why opi differs from upstream pi, one change at a time. The change list is in th
 
 ## Bug fixes
 
-**Overlay close.** In pi, `done()` from an extension overlay hides whatever overlay is on top of the stack. With one custom overlay and the fullscreen search overlay open, `done()` closed search. Extensions that open overlays can't work reliably until this is fixed.
-
 **HStack double render.** In pi, an HStack measures every child's height even when the height is fixed, so a transcript inside an HStack renders the whole document twice per frame. The side panels put the transcript in an HStack, so this had to be fixed first.
 
 **Wheel leak.** In pi, wheel input over a `contain` scroll view scrolls the transcript underneath once the view hits its end. Panels and floating frames need wheel input to stay inside them.
