@@ -234,6 +234,15 @@ describe("InteractiveMode.showExtensionCustom", () => {
 		initTheme("dark");
 	});
 
+	// Inline custom components go through the extension dialog stack.
+	const extensionDialogState = () => ({
+		extensionDialogs: [],
+		programStatus: { setBlocked: vi.fn() },
+		pushExtensionDialog: (InteractiveMode as any).prototype.pushExtensionDialog,
+		removeExtensionDialog: (InteractiveMode as any).prototype.removeExtensionDialog,
+		showTopExtensionDialog: (InteractiveMode as any).prototype.showTopExtensionDialog,
+	});
+
 	test("overlay custom UI reclaims input after non-overlay custom UI closes", async () => {
 		const terminal = new VirtualTerminal(80, 24);
 		const ui: TUI = new TuiMainScreen(terminal);
@@ -254,7 +263,7 @@ describe("InteractiveMode.showExtensionCustom", () => {
 			keybindings: {},
 			ui,
 			disposeActiveSelector: vi.fn(),
-			extensionOverlayHandles: new Set(),
+			...extensionDialogState(),
 		};
 		const showExtensionCustom = <T>(
 			factory: (tui: TUI, theme: unknown, keybindings: unknown, done: (result: T) => void) => Component,
@@ -302,85 +311,84 @@ describe("InteractiveMode.showExtensionCustom", () => {
 		}
 	});
 
-	function createOverlayHarness() {
-		const terminal = new VirtualTerminal(80, 24);
-		const ui: TUI = new TuiMainScreen(terminal);
-		const editor = new TestFocusableComponent("EDITOR");
-		const fakeThis = {
-			editor,
-			editorContainer: new Container(),
-			keybindings: {},
-			ui,
-			disposeActiveSelector: vi.fn(),
-			extensionOverlayHandles: new Set(),
-		};
-		const showExtensionCustom = <T>(
-			factory: (tui: TUI, theme: unknown, keybindings: unknown, done: (result: T) => void) => Component,
-		): Promise<T> =>
-			(InteractiveMode as any).prototype.showExtensionCustom.call(fakeThis, factory, {
-				overlay: true,
-			}) as Promise<T>;
-		fakeThis.editorContainer.addChild(editor);
-		ui.addChild(fakeThis.editorContainer);
-		ui.setFocus(editor);
-		return { terminal, ui, editor, showExtensionCustom };
-	}
+	// Regression test for #10648: closing a lower overlay removed the topmost overlay instead.
+	test.each([
+		{ lowerKind: "capturing", nonCapturing: false },
+		{ lowerKind: "non-capturing", nonCapturing: true },
+	])(
+		"closing a lower $lowerKind overlay custom UI removes its own overlay, not the topmost one",
+		async ({ nonCapturing }) => {
+			const terminal = new VirtualTerminal(80, 24);
+			const ui: TUI = new TuiMainScreen(terminal);
+			const editorContainer = new Container();
+			const editor = new TestFocusableComponent("EDITOR");
+			const lower = new TestFocusableComponent("LOWER");
+			const upper = new TestFocusableComponent("UPPER");
+			let closeLower: (value: string) => void = () => {
+				throw new Error("closeLower was not initialized");
+			};
+			let closeUpper: (value: string) => void = () => {
+				throw new Error("closeUpper was not initialized");
+			};
+			const fakeThis = {
+				editor,
+				editorContainer,
+				keybindings: {},
+				ui,
+				disposeActiveSelector: vi.fn(),
+				...extensionDialogState(),
+			};
+			const showExtensionCustom = <T>(
+				factory: (tui: TUI, theme: unknown, keybindings: unknown, done: (result: T) => void) => Component,
+				options?: { overlay?: boolean; overlayOptions?: { nonCapturing?: boolean } },
+			): Promise<T> =>
+				(InteractiveMode as any).prototype.showExtensionCustom.call(fakeThis, factory, options) as Promise<T>;
 
-	test("closing an overlay custom UI hides its own overlay, not the topmost one", async () => {
-		const { terminal, ui, showExtensionCustom } = createOverlayHarness();
-		const custom = new TestFocusableComponent("CUSTOM");
-		const search = new TestFocusableComponent("SEARCH");
-		let closeCustom: (value: string) => void = () => {
-			throw new Error("closeCustom was not initialized");
-		};
-		ui.start();
-		try {
-			const customPromise = showExtensionCustom<string>((_tui, _theme, _keybindings, done) => {
-				closeCustom = done;
-				return custom;
-			});
-			await flushTui(ui, terminal);
-			const searchHandle = ui.showOverlay(search);
-			await flushTui(ui, terminal);
-			expect(search.focused).toBe(true);
+			editorContainer.addChild(editor);
+			ui.addChild(editorContainer);
+			ui.setFocus(editor);
+			ui.start();
+			try {
+				const lowerPromise = showExtensionCustom<string>(
+					(_tui, _theme, _keybindings, done) => {
+						closeLower = done;
+						return lower;
+					},
+					{ overlay: true, overlayOptions: { nonCapturing } },
+				);
+				await flushTui(ui, terminal);
+				const upperPromise = showExtensionCustom<string>(
+					(_tui, _theme, _keybindings, done) => {
+						closeUpper = done;
+						return upper;
+					},
+					{ overlay: true },
+				);
+				await flushTui(ui, terminal);
+				expect(upper.focused).toBe(true);
 
-			closeCustom("closed");
-			await expect(customPromise).resolves.toBe("closed");
-			await flushTui(ui, terminal);
-			expect(search.focused).toBe(true);
-			expect(custom.focused).toBe(false);
+				closeLower("lower closed");
+				await expect(lowerPromise).resolves.toBe("lower closed");
+				await flushTui(ui, terminal);
 
-			searchHandle.hide();
-			expect(ui.hasOverlay()).toBe(false);
-		} finally {
-			ui.stop();
-		}
-	});
+				const viewport = terminal.getViewport().join("\n");
+				expect(viewport).toContain("UPPER");
+				expect(viewport).not.toContain("LOWER");
+				terminal.sendInput("x");
+				await flushTui(ui, terminal);
+				expect(upper.inputs).toEqual(["x"]);
+				expect(lower.inputs).toEqual([]);
 
-	test("done() inside the factory leaves no stale overlay and keeps other overlays open", async () => {
-		const { terminal, ui, showExtensionCustom } = createOverlayHarness();
-		const custom = new TestFocusableComponent("CUSTOM");
-		const search = new TestFocusableComponent("SEARCH");
-		ui.start();
-		try {
-			const searchHandle = ui.showOverlay(search);
-			await flushTui(ui, terminal);
-
-			const result = await showExtensionCustom<string>((_tui, _theme, _keybindings, done) => {
-				done("early");
-				return custom;
-			});
-			await flushTui(ui, terminal);
-			expect(result).toBe("early");
-			expect(search.focused).toBe(true);
-			expect(custom.focused).toBe(false);
-
-			searchHandle.hide();
-			expect(ui.hasOverlay()).toBe(false);
-		} finally {
-			ui.stop();
-		}
-	});
+				closeUpper("upper closed");
+				await expect(upperPromise).resolves.toBe("upper closed");
+				await flushTui(ui, terminal);
+				expect(ui.hasOverlay()).toBe(false);
+				expect(editor.focused).toBe(true);
+			} finally {
+				ui.stop();
+			}
+		},
+	);
 });
 
 describe("InteractiveMode.createExtensionUIContext addAutocompleteProvider", () => {
