@@ -1,4 +1,4 @@
-# pi-my fork
+# opi
 
 This is a personal fork of [earendil-works/pi](https://github.com/earendil-works/pi). The fork's own changes are the commits listed under Core changes below, plus this file, the note at the top of `README.md` and `pi-my-plan.md`. Everything else is upstream.
 
@@ -43,7 +43,7 @@ To run it from anywhere, put a wrapper script on your `PATH`. Use a script, not 
 
 ```sh
 #!/bin/sh
-# Run the pi-my fork from source.
+# Run the opi fork from source.
 export PI_SKIP_VERSION_CHECK=1
 # Optional: unset provider variables the fork should not pick up, e.g.
 # unset OPENAI_API_KEY

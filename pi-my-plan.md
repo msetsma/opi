@@ -1,4 +1,4 @@
-# pi-my fork plan
+# opi fork plan
 
 Plan for the TUI customization work described in `../pi-customization-notes.md`. All file:line references are at fork HEAD `6fb2e7815` (upstream `ce950d78` plus one upstream commit, no fork commits yet). `IM` means `packages/coding-agent/src/modes/interactive/interactive-mode.ts`. Line numbers in IM will shift once PR #10602 is cherry-picked in M1, so re-derive them after that step.
 
@@ -62,7 +62,7 @@ Steps:
    ```
    Later, if you want `pi` itself to be the fork, point `~/.local/bin/pi` at this wrapper.
 8. Branches: `main` mirrors upstream (fast-forward only, never commit to it). `my` is the integration branch. Feature branches `feat/<topic>` are cut from `main` so they stay PR-ready.
-9. Leave GitHub Actions disabled on `msetsma/pi-my`. The upstream issue and PR gate workflows would misfire.
+9. Leave GitHub Actions disabled on `msetsma/opi`. The upstream issue and PR gate workflows would misfire.
 10. Update the notes file with the corrections above.
 
 Done when: `npm run check` is green on unmodified `main`, `cd packages/tui && npm test` passes, and `pim` launches from source in tmux (160x40, cwd outside the repo). Record how long `npm run check` takes as a baseline.
