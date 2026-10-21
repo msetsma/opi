@@ -1,6 +1,6 @@
 # opi
 
-This is a personal fork of [earendil-works/pi](https://github.com/earendil-works/pi). The fork's own changes are the commits listed under Core changes below, plus this file, `.github/README.md` and `pi-my-plan.md`. Everything else is upstream.
+This is a personal fork of [earendil-works/pi](https://github.com/earendil-works/pi). The fork's own changes are the commits listed under Core changes below, plus this file, `.github/README.md` and `ROADMAP.md`. Everything else is upstream.
 
 ## What this fork is
 
@@ -69,4 +69,4 @@ Merge `upstream/main` into `main` rather than rebasing `main`. Rebase or re-cut 
 
 ## Plan
 
-`pi-my-plan.md` holds the full roadmap, milestones and backlog.
+[ROADMAP.md](ROADMAP.md) lists what is still open.
