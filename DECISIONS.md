@@ -34,4 +34,4 @@ Why opi differs from upstream pi, one change at a time. The change list is in th
 
 ## Where the fork stops
 
-Leader keys, statusline layout and the outline panel are not in the core. They live in separate extension repos, and the core only carries the hooks above. Upstream merges about 500 commits a month, so every opinion in the core is a recurring merge conflict, while a small hook is not.
+The fork changes core only when an extension can't do the job. If it can be built as an extension, it goes in an extension repo, and the core gets nothing. Upstream merges about 500 commits a month, so every change in core is a recurring merge conflict.
