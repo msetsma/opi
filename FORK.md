@@ -1,10 +1,10 @@
 # opi
 
-This is a personal fork of [earendil-works/pi](https://github.com/earendil-works/pi). The fork's own changes are the commits listed under Core changes below, plus this file, the note at the top of `README.md` and `pi-my-plan.md`. Everything else is upstream.
+This is a personal fork of [earendil-works/pi](https://github.com/earendil-works/pi). The fork's own changes are the commits listed under Core changes below, plus this file, `.github/README.md` and `pi-my-plan.md`. Everything else is upstream.
 
 ## What this fork is
 
-The README groups the changes by kind. [DECISIONS.md](DECISIONS.md) explains why the fork is set up this way. The table below adds the branch and upstream status for each change.
+The opi README (`.github/README.md`) groups the changes by kind. [DECISIONS.md](DECISIONS.md) explains why the fork is set up this way. The table below adds the branch and upstream status for each change.
 
 - `main` is the fork: upstream plus every change listed below. It is what runs day to day and the GitHub default branch.
 - Upstream is the `upstream` remote. Its `main` is reachable as `upstream/main`; there is no local mirror branch.

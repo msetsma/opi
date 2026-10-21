@@ -1,6 +1,6 @@
 # Decisions
 
-Why opi differs from upstream pi, one change at a time. The change list is in the [README](README.md), and branches and upstream status are in [FORK.md](FORK.md).
+Why opi differs from upstream pi, one change at a time. The change list is in the [opi README](.github/README.md), and branches and upstream status are in [FORK.md](FORK.md).
 
 ## Bug fixes
 
