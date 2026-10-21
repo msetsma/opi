@@ -1,39 +1,39 @@
 # Decisions
 
-Why opi is set up the way it is. The roadmap is in [pi-my-plan.md](pi-my-plan.md) and the change list is in [FORK.md](FORK.md).
+Why opi differs from upstream pi, one change at a time. The change list is in the [README](README.md), and branches and upstream status are in [FORK.md](FORK.md).
 
-## `main` is the fork, not a mirror of upstream
+## Bug fixes
 
-The fork started with `main` as a pristine copy of upstream and a separate `my` branch for our changes. That put the fork's README, changes and history on a branch nobody lands on, and GitHub showed the stock upstream project.
+**Overlay close.** In pi, `done()` from an extension overlay hides whatever overlay is on top of the stack. With one custom overlay and the fullscreen search overlay open, `done()` closed search. Extensions that open overlays can't work reliably until this is fixed.
 
-Now `main` is upstream plus our changes and is the default branch, so the repo page describes what the fork is. Upstream stays reachable as the `upstream` remote. We merge `upstream/main` into `main` instead of rebasing, because `main` is public and merges let `rerere` replay conflict resolutions on later syncs.
+**HStack double render.** In pi, an HStack measures every child's height even when the height is fixed, so a transcript inside an HStack renders the whole document twice per frame. The side panels put the transcript in an HStack, so this had to be fixed first.
 
-Feature branches are still cut from `upstream/main`, not from our `main`. That keeps each one free of fork-only commits, so it can go upstream as a PR without cleanup.
+**Wheel leak.** In pi, wheel input over a `contain` scroll view scrolls the transcript underneath once the view hits its end. Panels and floating frames need wheel input to stay inside them.
 
-## Core gets small hooks, extensions get the policy
+## Extension API
 
-Leader keys, statusline layout and the outline panel live in separate extension repos ([pi-leader](https://github.com/msetsma/pi-leader), [pi-statusline](https://github.com/msetsma/pi-statusline), [pi-outline](https://github.com/msetsma/pi-outline)). The core only gains generic hooks, such as widget placements and shortcut ids, and each hook should make sense to upstream on its own.
+**Editor border widgets.** pi has no way to put content on the editor's border, which is where a statusline belongs. Upstream PR #10602 adds it, so we cherry-picked it instead of writing a competing version.
 
-Upstream merged about 500 commits in a month, and `interactive-mode.ts` alone took 38 of them. Every opinion we put in the core is a recurring merge conflict. A hook is small and stable, and opinions in an extension never conflict.
+**Side panels.** pi only places widgets above or below the editor. An outline or file tree needs a column beside the transcript. Upstream discussion #1684 and the closed PR #2820 asked for the same thing and got no answer, so it lives in the fork.
 
-## Reuse upstream work
+**Shortcut ids.** In pi, a user can't rebind or disable a shortcut an extension registered with `registerShortcut`. An optional id makes it addressable in `keybindings.json`.
 
-Editor border widgets come from upstream PR #10602, cherry-picked, because every widget and statusline feature builds on its single widget map. Writing a competing version would diverge for no gain. If upstream revises the PR, we re-cherry-pick.
+**`TUI.getFocusedComponent`.** The method exists on the base class but not on the public `TUI` interface. A leader-key extension swallows a key prefix and has to replay it to the focused component when the sequence doesn't match.
 
-## Fixes first
+**`overlayOptions` JSDoc.** pi's type docs say `overlayOptions` can be "a function for dynamic updates", but the function is called once. Updating works by mutating the returned object, so the doc now says that.
 
-Two bugs and one performance problem turned up during research: the overlay close bug, the HStack double render and the wheel overscroll leak. They are the easiest upstream PRs, they need no new API, and they unblock the later work. They are also the best way to build trust with the maintainers before proposing larger features.
+## TUI components
 
-## Shared config directory
+**`Frame`.** pi overlays have no border, fixed height or input routing of their own, so every floating window would reimplement them. `Frame` is a bordered, fixed-height window that sends mouse input to its child and keeps wheel input from reaching the transcript.
 
-The fork uses the normal `~/.pi/agent` and not a separate directory. Settings, auth and sessions carry over with no setup. The cost is that a stock `pi` also loads our extensions and may render fork-only placements in the wrong spot. We accepted that for a personal daily driver.
+## Theming and settings
 
-## Upstream contribution rules
+**Text attributes.** pi theme files hold colors only, so a theme can't make headings bold or comments italic. Neovim highlight groups can, and that is the model we wanted. Syntax scope overrides let a theme recolor highlight.js scopes without a code change.
 
-Upstream auto-closes issues and PRs from new contributors. Each proposal is a short issue in our own words, and a PR follows only after a maintainer replies `lgtm`. Bug fixes go first.
+**Glyphs.** pi hardcodes box-drawing characters, `→` selectors and the scrollbar. They break on terminals and fonts that lack them, and users can't restyle them. The setting lives in `settings.json` and not in the theme, because glyphs depend on the terminal and font, not the color scheme, and shouldn't flip when light and dark mode switch.
 
-## Name
+**Settings tabs and glyphs row.** The fork added settings (fullscreen, images, glyphs), and one flat list got long. Tabs split it by topic, and the glyphs row makes the preset reachable without editing JSON.
 
-The repo is named `opi`, for opinionated pi. The fork is expected to grow its own defaults and features, so it is no longer a staging area for upstream patches. The name is short enough to double as a command if we ship our own binary.
+## Where the fork stops
 
-GitHub Actions stay disabled. Upstream's issue and PR gate workflows would misfire on a fork.
+Leader keys, statusline layout and the outline panel are not in the core. They live in separate extension repos, and the core only carries the hooks above. Upstream merges about 500 commits a month, so every opinion in the core is a recurring merge conflict, while a small hook is not.
