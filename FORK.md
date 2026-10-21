@@ -4,6 +4,8 @@ This is a personal fork of [earendil-works/pi](https://github.com/earendil-works
 
 ## What this fork is
 
+The README groups the changes by kind. [DECISIONS.md](DECISIONS.md) explains why the fork is set up this way. The table below adds the branch and upstream status for each change.
+
 - `main` is the fork: upstream plus every change listed below. It is what runs day to day and the GitHub default branch.
 - Upstream is the `upstream` remote. Its `main` is reachable as `upstream/main`; there is no local mirror branch.
 - Feature branches (`feat/*`, `fix/*`, `docs/*`) are cut from `upstream/main` so each one stays a clean upstream candidate, then merged into `main`.
